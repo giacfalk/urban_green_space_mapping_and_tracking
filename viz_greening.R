@@ -8,7 +8,7 @@ ggplot()+
   scale_color_viridis_c(name="", label=scales::label_percent())+
   ggtitle("Share of city area with built-up pixels containing green space")
 
-ggplot()+
+  ggplot()+
   geom_sf(data=world)+
   geom_point(data=filter(sf, P15>1e6), aes(x=X, y=Y, colour=...6/AREA), size=4)+
   geom_text(data=filter(sf, P15>1e6), aes(x=X, y=Y, label=abs(round(...6/AREA, 1))), nudge_y = .5)+

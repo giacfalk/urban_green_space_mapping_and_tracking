@@ -113,6 +113,14 @@ save(cities4, file = paste0("cities4_", ndvi_threshold, ".Rds"))
 ################
 # Processed data wrangling
 
+load(paste0("cities1_", ndvi_threshold, ".Rds"))
+load(paste0("cities2_", ndvi_threshold, ".Rds"))
+load(paste0("cities3_", ndvi_threshold, ".Rds"))
+load(paste0("cities4_", ndvi_threshold, ".Rds"))
+load(paste0("builtup_sum_", ndvi_threshold, ".Rds"))
+
+#
+
 cities1 <- cities1 %>% mutate(geometry=NULL, AREA=NULL) %>% as.data.frame()
 cities1 <- cities1[order(cities1$fid),]
 cities1 <- cities1$sum
