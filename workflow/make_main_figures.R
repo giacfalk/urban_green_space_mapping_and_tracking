@@ -25,9 +25,8 @@ setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_s
 sf <- read_sf("GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
 sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)
 
-grr <- out_ndvi_m %>% group_by(city, year) %>% dplyr::summarise(out_b = mean(out_b, na.rm=T))
+grr <- out_ndvi_m %>% group_by(city, year) %>% dplyr::summarise(out_b = median(out_b, na.rm=T))
 grr <- grr %>% group_by(city) %>% dplyr::mutate(out_b_diff = out_b[2]-out_b[1])
-grr <- grr %>% filter(year==2022)
 
 grr <- merge(grr, sf_c, by.x="city", by.y="UC_NM_MN")
 grr <- st_as_sf(grr)
@@ -43,13 +42,13 @@ load(url("https://github.com/valentinitnelav/RandomScripts/blob/master/NaturalEa
 PROJ <- "+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs" 
 NE_graticules.prj <- spTransform(NE_graticules, CRSobj = PROJ)
 
-grr <- filter(grr, !is.na(grr$out_b_diff))
+#grr <- filter(grr, !is.na(grr$out_b_diff))
 
 ggplot()+
   theme_void()+
   geom_sf(data=wrld_simpl_sf, fill="lightgrey", colour="black", lwd=0.25)+
-  stat_sf_coordinates(data=st_centroid(grr), colour="white", size=3)+
-  stat_sf_coordinates(data=st_centroid(grr), aes(colour=out_b), size=2.8)+
+  stat_sf_coordinates(data=st_centroid(grr[grr$year==2022,]), colour="white", size=3)+
+  stat_sf_coordinates(data=st_centroid(grr[grr$year==2022,]), aes(colour=out_b), size=2.8)+
   scale_colour_viridis_c(name="Predicted GVI in 2022")+
   theme(legend.position = "bottom", legend.direction = "horizontal",  plot.margin = unit(c(t=0, r=2, b=0, l=0), unit="cm"))+
   xlab("")+
@@ -61,8 +60,6 @@ ggsave("Figure2.png", scale=2, height = 5, width = 8)
 
 # Figure 3
 
-grr <- merge(out_ndvi_m, sf_c, by.x="city", by.y="UC_NM_MN")
-
 grr$GRGN_L2[grr$GRGN_L2=="Australia/New Zealand"] = "Oceania"
 
 
@@ -70,7 +67,7 @@ grrregio = grr %>% group_by(city, GRGN_L1, year) %>% dplyr::summarise(out_b=medi
 
 grrregio = grrregio %>%  group_by(GRGN_L1) %>% dplyr::mutate(pval=t.test(out_b[year==2016], out_b[year==2022])$p.value)
 
-grrregio = grrregio %>% group_by(GRGN_L1) %>% dplyr::mutate(ordvar=median(out_b[year==2022], na.rm=T), pval=median(pval, na.rm=T))
+grrregio = grrregio %>% group_by(GRGN_L1) %>% dplyr::mutate(ordvar=median(out_b[year==2016], na.rm=T), pval=median(pval, na.rm=T))
 
 grrregiolab = grrregio %>% group_by(GRGN_L1) %>% dplyr::summarise(out_b=median(out_b, na.rm=T), ordvar=median(ordvar, na.rm=T), pval=round(median(pval, na.rm=T), 2))
 
@@ -92,11 +89,30 @@ fig2a <- ggplot()+
 
 ###
 
-#unique(grr$city[grr$pval<0.05])
-
 grr <- merge(out_ndvi_m, sf_c, by.x="city", by.y="UC_NM_MN")
 
-grr_top_sel <- grr[!duplicated(grr$city),] %>% dplyr::group_by(GRGN_L1) %>% dplyr::slice_max(P15, n = 5) %>% pull(city)
+#unique(grr$city[grr$pval<0.05])
+
+slice_min_max <- function(df, order_by = value, n = 1) {
+  
+  order_by = enquo(order_by)
+  
+  min <- slice_min(df, !!order_by, n = n) %>%
+    mutate(type = "min")
+  
+  max <- slice_max(df, !!order_by, n = n) %>%
+    mutate(type = "max")
+  
+  df <- bind_rows(min, max) %>%
+    as_tibble()
+  
+  return(df)
+  
+}
+
+grr <- filter(grr, !is.na(city) & city!="N/A")
+
+grr_top_sel <- grr %>% filter(year==2022) %>% dplyr::group_by(GRGN_L2, city) %>% dplyr::summarise(out_b=median(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L2) %>%  slice_min_max(out_b, n = 1) %>% pull(city)
 
 grr_top <- filter(grr, city %in% grr_top_sel)
 
@@ -118,12 +134,12 @@ fig2b <- ggplot()+
   geom_boxplot2(data= grrregio, aes(y=out_b, x=reorder(city, -ordvar), fill=as.factor(year)), width.errorbar = 0.1)+
   xlab("")+
   ylab("GVI city-level range")+
-  scale_fill_discrete(name="Year")+
   theme(axis.text.x = element_text(angle = 45, hjust=1), legend.position = "bottom", legend.direction = "horizontal")
 
 library(patchwork)
+library(ggsci)
 
-((fig2a + fig2b) & theme(legend.position = "bottom")) + plot_layout(ncol=1, guides = "collect") + plot_annotation(tag_levels = "A")
+(((fig2a + ggsci::scale_fill_npg(name="Year")) + (fig2b + ggsci::scale_fill_npg(name="Year"))) & theme(legend.position = "bottom")) + plot_layout(ncol=1, guides = "collect") + plot_annotation(tag_levels = "A")
 
 ggsave("Figure3.png", height = 10, width = 7.5)
 
@@ -176,6 +192,8 @@ ox_diagram_all_sel <- filter(ox_diagram_all, city %in% ox_diagram_all_sel)
 
 ox_diagram_all_sel$GRGN_L1[ox_diagram_all_sel$GRGN_L1=="Latin America and the Caribbean"] <- "Lat. Amer. & Caribb."
 
+ox_diagram_all_sel <- arrange(ox_diagram_all_sel, GRGN_L1)
+
 pp <- ggplot()+
   theme_classic()+
   geom_line(data=ox_diagram_all_sel, aes(y=pop_c, x=out_b, group = city, colour=city), size=0.75)+
@@ -185,8 +203,7 @@ pp <- ggplot()+
   ylab("")+
   scale_y_continuous(labels=scales::label_percent())+
   theme(legend.position = "none", legend.direction = "horizontal", legend.key.size = unit(0.2, "cm"))+
-  guides(colour=guide_legend(nrow=3,byrow=TRUE))+
-  scale_colour_discrete(name="")
+  guides(colour=guide_legend(nrow=3,byrow=TRUE))
 
 
 ox_diagram_regional <- ox_diagram_all %>% group_by(GRGN_L1) %>% dplyr::arrange(out_b) %>% mutate(pop_c = cumsum(pop)/sum(pop))
@@ -204,12 +221,14 @@ p_r <- ggplot(data=ox_diagram_regional, aes(y=pop_c, x=out_b, group = GRGN_L1, c
   ylab("Cum. frac. of population")+
   scale_y_continuous(labels=scales::label_percent())+
   theme(legend.position = "bottom", legend.direction = "horizontal", legend.key.size = unit(0.2, "cm"))+
-  guides(colour=guide_legend(nrow=4,byrow=TRUE))+
-  scale_colour_discrete(name="")
+  guides(colour=guide_legend(nrow=4,byrow=TRUE))
 
 library(patchwork)
+library(ggpubr)
 
-lower_pane_fig_4 = p_r + pp + plot_annotation(tag_levels = list("B", "C"))
+palette <-   get_palette("npg",  5)
+
+lower_pane_fig_4 = (p_r + ggsci::scale_colour_npg(name="")) + (pp + scale_colour_manual(values = c(palette, palette, palette, palette, palette, palette))) + plot_annotation(tag_levels = list("A", "B"))
 
 ggsave("Figure4_lower.png", lower_pane_fig_4, scale=2, height = 3.5, width = 6)
 
@@ -263,8 +282,9 @@ ggsave("Figure4_upper.png", upper_pane_fig_4, scale=2, height = 3.5, width = 6)
 ox_diagram_all <- bind_rows(ox_diagram_o)
 
 library(acid)
+library(matrixStats)
 
-gg <- (ox_diagram_all %>%  st_set_geometry(NULL) %>% ungroup() %>% group_by(city, year) %>% dplyr::summarise(gini=as.numeric(acid::weighted.gini(x=out_b, w=pop_c)), gvi=weighted.mean(x=out_b, w=pop_c, na.rm=T)))
+gg <- (ox_diagram_all %>%  st_set_geometry(NULL) %>% ungroup() %>% group_by(city, year) %>% dplyr::summarise(gini=as.numeric(acid::weighted.gini(x=out_b, w=pop_c)), gvi=matrixStats::weightedMedian(x=out_b, w=pop_c, na.rm=T)))
 
 gg <- gg %>% ungroup() %>% group_by(city) %>% dplyr::summarise(gini=mean(gini), gvi=mean(gvi))
 
@@ -272,7 +292,7 @@ gg <- arrange(gg, desc(gini))
 
 library(xtable)
 
-sink("gini_table.tex")
-xtable(gg, caption = "Gini indexes of GVI exposure", label = "tab:gini")
+sink(paste0(getwd(), "/gini_table.tex"))
+tableSb <- xtable(gg, caption = "Gini indexes of GVI exposure", label = "tab:gini")
+print(tableSb, include.rownames=F, tabular.environment="longtable", floating=FALSE)
 sink()
-

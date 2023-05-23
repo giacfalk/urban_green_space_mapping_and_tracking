@@ -1,3 +1,21 @@
+# calculate statistics
+
+library(caret)
+library(CAST)
+library(rworldmap)
+library(countrycode)
+library(wbstats)
+library(rasterVis)
+require(rgdal)
+require(maptools)
+library(ggthemes)
+library(ggrepel)
+library(sf)
+library(tidyverse)
+
+load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points.Rdata")
+
+setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
 
 statone <- function(predictions){
   
@@ -48,11 +66,34 @@ out <- bind_rows(cis_a_out)
 out2 <- bind_rows(cis_b_out)
 change_t_out <- t(bind_rows(change_t_out))
 
-
 #is change statistically significant?
 
-cis <- bind_rows(out, out2)
-cis$p_value <- c(na.omit(change_t_out), rep(NA, length(na.omit(change_t_out))))
+colnames(out)[1:2] <- c("gvi_ci_lower_2016", "gvi_ci_upper_2016")
+out$year <- NULL
+
+colnames(out2)[1:2] <- c("gvi_ci_lower_2022", "gvi_ci_upper_2022")
+out2$year <- NULL
+
+cis <- merge(out, out2, by="city")
+
+change_t_out <- as.data.frame(change_t_out)
+change_t_out$city <- rownames(change_t_out)
+rownames(change_t_out) <- NULL
+colnames(change_t_out)[1] <- "p_value"
+
+cis <- merge(cis, change_t_out, by="city")
+
+cis$mean_2016 <- (cis$gvi_ci_lower_2016 + cis$gvi_ci_upper_2016)/2
+cis$mean_2022 <- (cis$gvi_ci_lower_2022 + cis$gvi_ci_upper_2022)/2
+cis$delta <- cis$mean_2022 - cis$mean_2016
+cis$delta_pct <- (cis$mean_2022 / cis$mean_2016) - 1
+cis$sig <- ifelse(cis$p_value<0.05, 1, 0)
+
+# check change in stat. sign. cities
+View(cis %>% filter(sig==1) %>% arrange(desc(delta_pct)))
+
+# in how many cities is change stat sign?
+nrow(cis %>% filter(sig==1)) / nrow(cis)
 
 #ggplot(cis)+
 #   theme_classic()+
@@ -72,37 +113,24 @@ cis$p_value <- c(na.omit(change_t_out), rep(NA, length(na.omit(change_t_out))))
 
 library(modelsummary)
 
-cis$lol <- (cis$V1+cis$V2)/2
-cis$lol <- round(cis$lol, 2)
-cis$V1 <- round(cis$V1, 2)
-cis$V2 <- round(cis$V2, 2)
+cis <- mutate_if(cis, is.numeric, round, 2)
 
-cis$year <- as.factor(cis$year)
+cis$mean_2016 <- paste0(cis$mean_2016, "\n (", cis$gvi_ci_lower_2016, "-", cis$gvi_ci_upper_2016 , ")")
+cis$mean_2022 <- paste0(cis$mean_2022, "\n (", cis$gvi_ci_lower_2022, "-", cis$gvi_ci_upper_2022 , ")")
 
-cis <- cis %>% group_by(city) %>% mutate(diff=lol[2]-lol[1])
+cis <- dplyr::select(cis, city, mean_2016, mean_2022, delta, delta_pct, p_value)
 
-cis$lol <- paste0(cis$lol, "\n (", cis$V1, "-", cis$V2 , ")")
-cis$lol <- as.factor(cis$lol)
+#
 
-###
+cis <- arrange(cis, city)
 
-cis_w <- pivot_wider(cis, values_from = "lol", names_from = "year")
+colnames(cis) <- c("City", "GVI, 2016 (median and 95% C.I.)", "GVI, 2022 (median and 95% C.I.)", "GVI, 2022-2016 difference", "GVI, 2022-2016 % difference", "p-value")
 
-cis_w[c(1:114), 7] <- cis_w[c(115:228), 7] 
-cis_w <- cis_w[c(1:114),] 
-
-cis_w <- arrange(cis_w, city)
-
-cis_w <- cis_w[,c(3,6,7,5,4)]
-
-colnames(cis_w) <- c("City", "GVI, 2016 (mean)", "GVI, 2022 (mean)", "GVI, 2022-2016 difference", "p-value")
+cis$`GVI, 2022-2016 % difference` <- cis$`GVI, 2022-2016 % difference` * 100
 
 library(xtable)
 
-cis_w$`GVI, 2022-2016 difference` <- as.character(round(cis_w$`GVI, 2022-2016 difference`, 2))
-cis_w$`p-value` <-  as.character(round(cis_w$`p-value`, 2))
-
 sink(paste0(getwd(), "/tab_all.tex"))
-tableSb <- xtable(cis_w)
+tableSb <- xtable(cis)
 print(tableSb, include.rownames=F, tabular.environment="longtable", floating=FALSE)
 sink()
