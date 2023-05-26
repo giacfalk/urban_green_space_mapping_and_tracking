@@ -2,6 +2,8 @@
 
 setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
 
+load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points.Rdata")
+
 sf <- read_sf("GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
 sf <- filter(sf, !(GRGN_L2 %in% c("Polynesia", "Melanesia", "Caribbean")))
 sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)
@@ -23,7 +25,6 @@ ggplot(grr)+
   ylab("GVI range")+
   scale_fill_discrete(name="Year")+
   theme(axis.text.x = element_text(angle = 45, hjust=1), legend.position = "bottom", legend.direction = "horizontal")
-
 
 ggsave("Figure_2_SI.png", scale=1.65)
 

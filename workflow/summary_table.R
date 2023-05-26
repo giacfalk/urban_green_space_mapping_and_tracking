@@ -124,9 +124,9 @@ cis <- dplyr::select(cis, city, mean_2016, mean_2022, delta, delta_pct, p_value)
 
 cis <- arrange(cis, city)
 
-colnames(cis) <- c("City", "GVI, 2016 (median and 95% C.I.)", "GVI, 2022 (median and 95% C.I.)", "GVI, 2022-2016 difference", "GVI, 2022-2016 % difference", "p-value")
+colnames(cis) <- c("City", "GVI, 2016 (median and 95% C.I.)", "GVI, 2022 (median and 95% C.I.)", "GVI, 2022-2016 med. diff.", "GVI, 2022-2016 %  med. diff.", "p-value of med. diff.")
 
-cis$`GVI, 2022-2016 % difference` <- cis$`GVI, 2022-2016 % difference` * 100
+cis$`GVI, 2022-2016 %  med. diff.` <- cis$`GVI, 2022-2016 %  med. diff.` * 100
 
 library(xtable)
 

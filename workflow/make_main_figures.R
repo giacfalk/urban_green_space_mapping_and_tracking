@@ -16,6 +16,14 @@ load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_sp
 
 setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
 
+
+# l <- out_ndvi_m %>% filter(out_b<0) %>% st_as_sf(coords=c("x", "y"), crs=4326) %>% dplyr::select(out_b)
+# library(mapview)
+# mapview(l)
+# 
+# summary(out_ndvi_m %>% pull(water))
+# summary(out_ndvi_m %>% filter(out_b<0) %>% pull(water))
+
 ###########################
 
 #out_ndvi_m %>% filter(city=="London") %>% st_as_sf(coords=c("x", "y"), crs=4326) %>% mapview::mapview(zcol="out_b")
@@ -47,7 +55,7 @@ NE_graticules.prj <- spTransform(NE_graticules, CRSobj = PROJ)
 ggplot()+
   theme_void()+
   geom_sf(data=wrld_simpl_sf, fill="lightgrey", colour="black", lwd=0.25)+
-  stat_sf_coordinates(data=st_centroid(grr[grr$year==2022,]), colour="white", size=3)+
+  stat_sf_coordinates(data=st_centroid(grr[grr$year==2022,]), colour="white", size=3.5)+
   stat_sf_coordinates(data=st_centroid(grr[grr$year==2022,]), aes(colour=out_b), size=2.8)+
   scale_colour_viridis_c(name="Predicted GVI in 2022")+
   theme(legend.position = "bottom", legend.direction = "horizontal",  plot.margin = unit(c(t=0, r=2, b=0, l=0), unit="cm"))+
@@ -65,7 +73,17 @@ grr$GRGN_L2[grr$GRGN_L2=="Australia/New Zealand"] = "Oceania"
 
 grrregio = grr %>% group_by(city, GRGN_L1, year) %>% dplyr::summarise(out_b=median(out_b, na.rm=T))
 
-grrregio = grrregio %>%  group_by(GRGN_L1) %>% dplyr::mutate(pval=t.test(out_b[year==2016], out_b[year==2022])$p.value)
+#
+
+grr <- out_ndvi_m 
+grr <- merge(grr, sf_c, by.x="city", by.y="UC_NM_MN")
+grr$geom <- NULL
+grr$GRGN_L2[grr$GRGN_L2=="Australia/New Zealand"] = "Oceania"
+
+#
+grrregio_pval = grr %>%  group_by(GRGN_L1) %>% dplyr::summarise(pval=t.test(out_b[year==2016], out_b[year==2022])$p.value) 
+
+grrregio <- merge(grrregio, grrregio_pval, "GRGN_L1")
 
 grrregio = grrregio %>% group_by(GRGN_L1) %>% dplyr::mutate(ordvar=median(out_b[year==2016], na.rm=T), pval=median(pval, na.rm=T))
 
@@ -80,7 +98,7 @@ grrregiolab$GRGN_L1[grrregiolab$GRGN_L1=="Latin America and the Caribbean"] <- "
 fig2a <- ggplot()+
   theme_classic()+
   geom_boxplot2(data= grrregio, aes(y=out_b, x=reorder(GRGN_L1, -ordvar), fill=as.factor(year)), width.errorbar = 0.15)+
-  geom_text(data = grrregiolab, aes(y=out_b+7, x=reorder(GRGN_L1, -ordvar), label=ifelse(pval==0, "p<0.01", paste0("p=", pval))))+
+  geom_text(data = grrregiolab, aes(y=10, x=reorder(GRGN_L1, -ordvar), label=ifelse(pval==0, "p<0.01", paste0("p=", pval))))+
   xlab("")+
   ylab("GVI macro-region range of city-level medians")+
   scale_fill_discrete(name="Year")+
@@ -196,7 +214,7 @@ ox_diagram_all_sel <- arrange(ox_diagram_all_sel, GRGN_L1)
 
 pp <- ggplot()+
   theme_classic()+
-  geom_line(data=ox_diagram_all_sel, aes(y=pop_c, x=out_b, group = city, colour=city), size=0.75)+
+  geom_line(data=ox_diagram_all_sel, aes(y=pop_c, x=out_b, group = city, colour=city), size=0.45)+
   xlab("GVI exposure")+
   facet_wrap(vars(GRGN_L1))+ 
   geom_label_repel(data=ox_diagram_all_sel %>% st_set_geometry(NULL) %>%  group_by(GRGN_L1, city) %>% dplyr::summarise(out_b=median(out_b, na.rm=T), pop_c=median(pop_c, na.rm=T)), aes(x=out_b, y=pop_c, label=city, colour=city), size=2.5)+
@@ -226,11 +244,13 @@ p_r <- ggplot(data=ox_diagram_regional, aes(y=pop_c, x=out_b, group = GRGN_L1, c
 library(patchwork)
 library(ggpubr)
 
-palette <-   get_palette("npg",  5)
+palette <-   get_palette("npg",  30)
 
-lower_pane_fig_4 = (p_r + ggsci::scale_colour_npg(name="")) + (pp + scale_colour_manual(values = c(palette, palette, palette, palette, palette, palette))) + plot_annotation(tag_levels = list("A", "B"))
+set.seed(2023)
 
-ggsave("Figure4_lower.png", lower_pane_fig_4, scale=2, height = 3.5, width = 6)
+lower_pane_fig_4 = (p_r + ggsci::scale_colour_npg(name="")) + (pp + scale_colour_manual(values = sample(palette))) + plot_annotation(tag_levels = list("A", "B")) + plot_layout(widths = c(0.8, 1.35))
+
+ggsave("Figure4_lower.png", lower_pane_fig_4, scale=1.5, height = 3.5, width = 6)
 
 
 ####################

@@ -23,9 +23,10 @@ library(lattice)
 h<-histogram(as.numeric(substr(sf$panoDate, 1, 4)), xlab="Google Street View aquisition year",
              ylab="Relative frequency",col="darkred")
 
-png("hist_y_distr.png")
+png("hist_y_distr.png", width = 1000, height = 1000, res=200)
 h
 dev.off()
+
 # descriptive plot for SI
 
 sf_d <- sf
@@ -37,12 +38,12 @@ sf_d$city <- gsub("_", "", sf_d$city)
 
 ggplot(sf_d)+
   theme_classic()+
-geom_boxplot(aes(x=reorder(city, GreenView, FUN = median), y=GreenView), fill="white")+
+geom_boxplot2(aes(x=reorder(city, GreenView, FUN = median), y=GreenView), fill="orange")+
   xlab("City")+
   ylab("GVI distribution")+
-  theme(legend.position = "none", axis.text.x = element_text(angle = 90))
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1))
 
-ggsave("gvi_descr.png", scale=1.5)
+ggsave("gvi_descr.png", scale=1.1)
 
 #################
 

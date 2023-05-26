@@ -119,4 +119,4 @@ ggplot(na.omit(ctry_acc))+
   ylab("Country-level, full sample best model r-squared")+
   xlab("Country")
 
-ggsave("results/ctr_level_test_acc.png", scale=1.25, height = 4.5, width = 7)
+ggsave("results/ctr_level_test_acc.png", scale=0.85, height = 4.5, width = 7)
