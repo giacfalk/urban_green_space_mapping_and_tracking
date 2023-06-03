@@ -9,7 +9,10 @@ library(ggplot2)
 
 setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
 
-csv <- read.csv("finalDataPreds.csv")
+load("allRes.Rdata")
+load("after_points_new.Rdata")
+
+csv <- allData
 
 # calculate MAPEs and MSEs
 

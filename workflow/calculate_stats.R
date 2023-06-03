@@ -13,7 +13,7 @@ library(ggrepel)
 library(sf)
 library(tidyverse)
 
-load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points.Rdata")
+load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points_new.Rdata")
 
 setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
 
@@ -29,6 +29,11 @@ grr <- st_as_sf(grr)
 grr <- st_transform(grr, "ESRI:54009")
 grr$geom <- NULL
 
+####
+
+out_ndvi_m %>% group_by(city, year) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% group_by(year) %>%   dplyr::summarise(out_b = mean(out_b, na.rm=T))
+
+
 #
 
 # greenest and least green cities
@@ -41,7 +46,7 @@ View(grr %>% group_by(GRGN_L1) %>% arrange(out_b) %>% slice(1))
 
 out_ndvi_m %>% filter(year==2022) %>%  group_by(city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% arrange(desc(out_b))
 
-out_ndvi_m %>% filter(year==2022) %>% group_by(city, year) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(mean = median(out_b, na.rm=T), min = min(out_b, na.rm=T), max = max(out_b, na.rm=T))
+out_ndvi_m %>% filter(year==2022) %>% group_by(city, year) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(median = median(out_b, na.rm=T), min = min(out_b, na.rm=T), max = max(out_b, na.rm=T))
 
 #########
 
@@ -55,30 +60,30 @@ grr %>% filter(year==2022) %>%  group_by(city, GRGN_L2) %>% dplyr::summarise(out
 
 
 # absolute value decline in GVI
-out_ndvi_m %>% filter(year==2022) %>% group_by(city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(mean = median(out_b, na.rm=T)) - out_ndvi_m %>% filter(year==2016) %>% group_by(city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(mean = median(out_b, na.rm=T))
+out_ndvi_m %>% filter(year==2022) %>% group_by(city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(median = median(out_b, na.rm=T)) - out_ndvi_m %>% filter(year==2016) %>% group_by(city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(median = median(out_b, na.rm=T))
 
 # percentage decline in GVI
-((out_ndvi_m %>% filter(year==2022) %>% group_by(city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(mean = median(out_b, na.rm=T)) / out_ndvi_m %>% filter(year==2016) %>% group_by(city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(mean = median(out_b, na.rm=T))) - 1) * 100
+((out_ndvi_m %>% filter(year==2022) %>% group_by(city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(mean = mean(out_b, na.rm=T)) / out_ndvi_m %>% filter(year==2016) %>% group_by(city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% dplyr::summarise(mean = mean(out_b, na.rm=T))) - 1) * 100
 
 ###############################
 
 out_ndvi_mm <- merge(out_ndvi_m, sf_c, by.x="city", by.y="UC_NM_MN")
 
 # absolute value decline in GVI
-reg_2022 <- out_ndvi_mm %>% filter(year==2022) %>% group_by(GRGN_L1, city) %>% dplyr::summarise(out_b = mean(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>%  dplyr::summarise(mean = mean(out_b, na.rm=T))
+reg_2022 <- out_ndvi_mm %>% filter(year==2022) %>% group_by(GRGN_L1, city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>%  dplyr::summarise(median = mean(out_b, na.rm=T))
 
-reg_2016 <- out_ndvi_mm %>% filter(year==2016) %>% group_by(GRGN_L1, city) %>% dplyr::summarise(out_b = mean(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>% dplyr::summarise(mean = mean(out_b, na.rm=T))
+reg_2016 <- out_ndvi_mm %>% filter(year==2016) %>% group_by(GRGN_L1, city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>% dplyr::summarise(median = mean(out_b, na.rm=T))
 
-reg_2022$delta <- reg_2022$mean - reg_2016$mean
+reg_2022$delta <- reg_2022$median - reg_2016$median
 
 reg_2022
 
 # percentage decline in GVI
-reg_2022 <- out_ndvi_mm %>% filter(year==2022) %>% group_by(GRGN_L1, city) %>% dplyr::summarise(out_b = mean(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>%  dplyr::summarise(mean = mean(out_b, na.rm=T))
+reg_2022 <- out_ndvi_mm %>% filter(year==2022) %>% group_by(GRGN_L1, city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>%  dplyr::summarise(median = mean(out_b, na.rm=T))
 
-reg_2016 <- out_ndvi_mm %>% filter(year==2016) %>% group_by(GRGN_L1, city) %>% dplyr::summarise(out_b = mean(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>% dplyr::summarise(mean = mean(out_b, na.rm=T))
+reg_2016 <- out_ndvi_mm %>% filter(year==2016) %>% group_by(GRGN_L1, city) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>% dplyr::summarise(median = mean(out_b, na.rm=T))
 
-reg_2022$delta <- ((reg_2022$mean / reg_2016$mean) - 1)*100
+reg_2022$delta <- ((reg_2022$median / reg_2016$median) - 1)*100
 
 reg_2022
 
