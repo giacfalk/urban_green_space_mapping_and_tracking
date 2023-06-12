@@ -1,33 +1,33 @@
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/workflow")
+setwd("./urban_green_space_mapping_and_tracking")
 
-source("merge_and_prepare_data_all_cities.R")
+source("workflow/merge_and_prepare_data_all_cities.R")
 
-source("string_generator.R")
+source("workflow/string_generator.R")
 
 # data preparation in GEE happening here, "greenview_export.js" script #
 
-source("nnListCalc.R")
+source("workflow/nnListCalc.R")
 
-source("model_training.R")
+source("workflow/modelScript.R")
 
-source("generate_shapefile_for_js_gee_extraction.R")
+source("workflow/generate_shapefile_for_js_gee_extraction.R")
 
 # data preparation in GEE happening here, "greenview_cities_extrapolate.js" script #
 
-source("predictions_cities.R")
+source("workflow/predictions_cities.R")
 
-source("valid_figure.R")
+source("workflow/valid_figure.R")
 
-source("make_main_figures.R")
+source("workflow/make_main_figures.R")
 
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/workflow")
+setwd("workflow")
 
-source("calculate_stats.R")
+source("workflow/calculate_stats.R")
 
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/workflow")
+setwd("workflow")
 
-source("summary_table.R")
+source("workflow/summary_table.R")
 
-source("make_figures_si.R")
+source("workflow/make_figures_si.R")
 
-source("make_dashboard.R")
+source("workflow/make_dashboard.R")

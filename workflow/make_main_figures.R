@@ -12,9 +12,9 @@ library(sf)
 library(tidyverse)
 library(raster)
 
-load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points_new.Rdata")
+load("data/validation/after_points_new.Rdata")
 
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
+setwd("data/validation/")
 
 
 # l <- out_ndvi_m %>% filter(out_b<0) %>% st_as_sf(coords=c("x", "y"), crs=4326) %>% dplyr::select(out_b)
@@ -192,7 +192,7 @@ for (i in unique(gvs[[1]]$city)){
     
     # pop extract
     
-    pop = raster("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
+    pop = raster("data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
     ox_diagram$pop = exactextractr::exact_extract(pop, ox_diagram, "sum")
     
     ox_diagram <- ox_diagram %>% dplyr::arrange(out_b)
@@ -275,7 +275,7 @@ if (nrow(cents)<2){
   
   # pop extract
   
-  pop = raster("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
+  pop = raster("data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
   ox_diagram$pop = exactextractr::exact_extract(pop, ox_diagram, "sum")
   
   ox_diagram <- ox_diagram %>% dplyr::arrange(out_b)

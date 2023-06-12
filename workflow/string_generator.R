@@ -51,7 +51,7 @@ str3 <- '",
 
 
 str <- paste0(string, 1:41, string2, 1:41, str3, collapse="")
-writeLines(str, "C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/str.txt")
+writeLines(str, "data/validation/str.txt")
 
 
 ###
@@ -105,7 +105,7 @@ str3 <- '",
 
 
 str <- paste0(string, 1:41, string2, 1:41, str3, collapse="")
-writeLines(str, "C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/str1b.txt")
+writeLines(str, "data/validation/str1b.txt")
 
 
 ###
@@ -144,7 +144,7 @@ str3 <- '",
 
 
 str <- paste0(string, 1:41, string2, 1:41, str3, collapse="")
-writeLines(str, "C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/str1c.txt")
+writeLines(str, "data/validation/str1c.txt")
 
 
 ###
@@ -186,7 +186,7 @@ str3 <- '",
 
 
 str <- paste0(string, 1:41, string2, 1:41, str3, collapse="")
-writeLines(str, "C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/str2.txt")
+writeLines(str, "data/validation/str2.txt")
 
 ###
 
@@ -223,7 +223,7 @@ str3 <- '",
 
 
 str <- paste0(string, 1:41, string2, 1:41, str3, collapse="")
-writeLines(str, "C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/str3.txt")
+writeLines(str, "data/validation/str3.txt")
 
 ###############################
 
@@ -337,7 +337,7 @@ str2 <- paste0(string, 1:34, string2, 1:34, str3, collapse="")
 
 str <- paste0(str, str2, collapse="")
 
-writeLines(str, "C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/str4.txt")
+writeLines(str, "data/validation/str4.txt")
 
 ####
 
@@ -419,7 +419,7 @@ str2 <- paste0(string, 1:34, string2, 1:34, str3, collapse="")
 
 str <- paste0(str, str2, collapse="")
 
-writeLines(str, "C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/str5.txt")
+writeLines(str, "data/validation/str5.txt")
 
 ####
 
@@ -499,7 +499,7 @@ str2 <- paste0(string, 1:34, string2, 1:34, str3, collapse="")
 
 str <- paste0(str, str2, collapse="")
 
-writeLines(str, "C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/str6.txt")
+writeLines(str, "data/validation/str6.txt")
 
 ###
 
@@ -535,5 +535,5 @@ str3 <- '",
 
 str <- paste0(string, 1:34, string2, 1:34, str3, collapse="")
 
-writeLines(str, "C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/str7.txt")
+writeLines(str, "data/validation/str7.txt")
 

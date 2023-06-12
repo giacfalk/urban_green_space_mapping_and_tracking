@@ -13,9 +13,9 @@ library(ggrepel)
 library(sf)
 library(tidyverse)
 
-load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points_new.Rdata")
+load("data/validation/after_points_new.Rdata")
 
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
+setwd("data/validation/")
 
 statone <- function(predictions){
   

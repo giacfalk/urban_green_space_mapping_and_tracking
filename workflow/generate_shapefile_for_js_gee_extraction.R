@@ -5,7 +5,7 @@ library(raster)
 library(exactextractr)
 library(rnaturalearthdata)
 
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
+setwd("data/validation/")
 
 #setwd("D:/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
 

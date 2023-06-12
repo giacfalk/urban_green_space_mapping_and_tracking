@@ -13,9 +13,9 @@ library(ggrepel)
 library(sf)
 library(tidyverse)
 
-load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points_new.Rdata")
+load("data/validation/after_points_new.Rdata")
 
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
+setwd("data/validation/")
 
 sf <- read_sf("GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
 sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)

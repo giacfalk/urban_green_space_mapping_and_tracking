@@ -3,8 +3,7 @@ gc()
 #install.packages("~/Downloads/h2o_3.38.0.4.tar.gz", repos=NULL)
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(data.table,ggplot2,ggpubr,h2o,mltools,caret,nngeo,parallel)
-out_ndvi_m <- readRDS("C:/Users/falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_gee_multispectral_gee.rds")
-#load("./FULLDATA/after_gee_multispectral_gee4.Rdata")
+out_ndvi_m <- readRDS("data/validation/after_gee_multispectral_gee.rds")
 setDT(out_ndvi_m)
 names(out_ndvi_m)
 
@@ -140,5 +139,5 @@ out_ndvi_m$medTrees<-unlist(lapply(result1,function(x){
 rm(list=setdiff(ls(), "result1"))
 
 #save list and DT
-save.image("nnList.RData")
+save.image("data/validation/nnList.RData")
 #######################

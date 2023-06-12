@@ -1,5 +1,7 @@
 ###############
 
+youremail = "test@gmail.com" # GEE-enabled email address
+
 # predict for another city
 # samplepoints within FUA city boundary
 
@@ -16,7 +18,7 @@ library(rnaturalearthdata)
 
 # download the data from GEE drive
 
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/workflow/data_cities")
+setwd("workflow/data_cities")
 
 get_countries <-  function(long, lat)
 { 
@@ -27,7 +29,7 @@ get_countries <-  function(long, lat)
 }
 
 library(googledrive)
-googledrive::drive_auth(email="giacomo.falchetta@gmail.com")
+googledrive::drive_auth(email=youremail)
 gvs <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'", n_max = 1000, orderBy = "recency desc")
 gvs <- gvs[!grepl("lc", gvs$name),]
 gvs <- gvs[!grepl("era", gvs$name),]
@@ -246,9 +248,9 @@ library(gdata)
 
 gdata::keep(gvs, gvs2, gvs3, gvs4, gvs2names, gvs4names, gvsnames, get_countries, sure=T)
 
-save.image("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points_step1.Rdata")
+save.image("data/validation/after_points_step1.Rdata")
 
-load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_rf_multispectral_gee.Rdata")
+load("data/validation/after_rf_multispectral_gee.Rdata")
 
 #########
 
@@ -268,4 +270,4 @@ out_ndvi_m <- bind_rows(out_ndvi_m)
 
 rm(list=setdiff(ls(), c("gvs","out_ndvi_m")))
 
-save.image("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points.Rdata")
+save.image("data/validation/after_points.Rdata")

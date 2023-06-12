@@ -7,7 +7,7 @@ library(rnaturalearthdata)
 library(caret)
 library(ggplot2)
 
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
+setwd("./urban_green_space_mapping_and_tracking/data/validation/")
 
 load("allRes.Rdata")
 load("after_points_new.Rdata")

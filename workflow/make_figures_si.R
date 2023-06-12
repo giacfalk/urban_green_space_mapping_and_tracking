@@ -1,8 +1,8 @@
 # figures for Figure 1 (framework)
 
-setwd("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
+setwd("data/validation/")
 
-load("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points_new.Rdata")
+load("data/validation/after_points_new.Rdata")
 
 sf <- read_sf("GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
 sf <- filter(sf, !(GRGN_L2 %in% c("Polynesia", "Melanesia", "Caribbean")))
@@ -131,7 +131,7 @@ if (nrow(cents)<2){
   
   # pop extract
   
-  pop = raster("C:/Users/Falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
+  pop = raster("data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
   ox_diagram$pop = exactextractr::exact_extract(pop, ox_diagram, "sum")
   
   ox_diagram <- ox_diagram %>% dplyr::arrange(out_b)

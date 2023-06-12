@@ -1,7 +1,10 @@
+
+youremail = "test@gmail.com" # GEE-enabled email address
+
 library(rgee)
 library(sf)
 library(tidyverse)
-ee_Initialize("giacomo.falchetta@gmail.com", drive = TRUE)
+ee_Initialize(youremail, drive = TRUE)
 library(lubridate)
 library(raster)
 library(exactextractr)
