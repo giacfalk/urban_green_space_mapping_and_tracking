@@ -30,4 +30,7 @@ source("workflow/summary_table.R")
 
 source("workflow/make_figures_si.R")
 
-source("workflow/make_dashboard.R")
+####
+
+p_s <- data.frame(X=c(0), Y=(51.483))
+source("workflow/on_demand_gvi_estimator.R")

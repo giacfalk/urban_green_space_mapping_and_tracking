@@ -25,10 +25,11 @@ ee_Initialize(email, drive=T, gcs=F)
 
 #1) import a set of points
 
-cities <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg")
-cities <- cities[1,]
-p_s <- st_sample(cities, 1000) 
-p_s <- st_as_sf(p_s) 
+# cities <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg")
+# cities <- cities[1,]
+# p_s <- st_sample(cities, 1000) 
+
+p_s <- st_as_sf(p_s, coords=c("X", "Y"), crs=4326) 
 p_s_coords <- p_s
 
 #2) get data for predictions from RGEE
