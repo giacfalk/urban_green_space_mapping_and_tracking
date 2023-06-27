@@ -132,6 +132,10 @@ grr <- filter(grr, !is.na(city) & city!="N/A")
 
 grr_top_sel <- grr %>% filter(year==2022) %>% dplyr::group_by(GRGN_L2, city) %>% dplyr::summarise(out_b=median(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L2) %>%  slice_min_max(out_b, n = 1) %>% pull(city)
 
+#
+
+grr_top_sel <- sf_c %>% dplyr::group_by(GRGN_L2) %>% slice_max(P15, n = 3) %>% pull(UC_NM_MN)
+
 grr_top <- filter(grr, city %in% grr_top_sel)
 
 grr_top <- grr_top %>% 
