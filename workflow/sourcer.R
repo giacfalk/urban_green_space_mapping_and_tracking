@@ -11,6 +11,10 @@ source("workflow/nnListCalc.R")
 source("workflow/modelScript.R")
 
 source("workflow/generate_shapefile_for_js_gee_extraction.R")
+  
+source("workflow/process_roads.R")
+
+source("workflow/cluster_points_along_roads.R")
 
 # data preparation in GEE happening here, "greenview_cities_extrapolate.js" script #
 
