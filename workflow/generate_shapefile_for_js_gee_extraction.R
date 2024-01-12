@@ -5,14 +5,14 @@ library(raster)
 library(exactextractr)
 library(rnaturalearthdata)
 
-setwd("data/validation/")
+# setwd("data/validation/")
 
-#setwd("D:/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/")
+setwd("C:/Users/falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data")
 
 #### NB: consider stratified sampling by city to have balanced picture
 set.seed(2022)
 
-sf <- read_sf("all_cities_green_index.shp")
+sf <- read_sf("validation/all_cities_green_index.shp")
 
 # filter by region
 # countries = st_as_sf(rnaturalearthdata::countries50)
@@ -32,6 +32,11 @@ write_sf(sf[[i]], paste0("gee_data/gv_all_", i, ".shp"))
 
 
 # 20 largest cities for each region / continent
+
+# roads 
+
+
+#
 
 sf <- read_sf("GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
 sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)

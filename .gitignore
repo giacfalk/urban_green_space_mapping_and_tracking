@@ -6,3 +6,7 @@ workflow/for_pres_Fig3_2022.R
 workflow/tab_all.tex
 workflow/todol_list.R
 workflow/data_cities/data_cities.7z
+*.Rdata
+h2ofilesgreen/xgbLog5hNNrmseHub
+h2ofilesgreen/xgbLog5hNNrmseHubFinal
+h2ofilesgreen/xgbLog5hNNrmseHubFinalALL
