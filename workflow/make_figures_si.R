@@ -2,7 +2,7 @@
 
 setwd("data/validation/")
 
-load("data/validation/after_points_new.Rdata")
+load("data/validation/after_points.Rdata")
 
 sf <- read_sf("GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
 sf <- filter(sf, !(GRGN_L2 %in% c("Polynesia", "Melanesia", "Caribbean")))

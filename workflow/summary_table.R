@@ -13,9 +13,7 @@ library(ggrepel)
 library(sf)
 library(tidyverse)
 
-load("data/validation/after_points_new.Rdata")
-
-setwd("data/validation/")
+load("data/validation/after_points.Rdata")
 
 statone <- function(predictions){
   
@@ -87,7 +85,7 @@ cis$mean_2016 <- (cis$gvi_ci_lower_2016 + cis$gvi_ci_upper_2016)/2
 cis$mean_2022 <- (cis$gvi_ci_lower_2022 + cis$gvi_ci_upper_2022)/2
 cis$delta <- cis$mean_2022 - cis$mean_2016
 cis$delta_pct <- (cis$mean_2022 / cis$mean_2016) - 1
-cis$sig <- ifelse(cis$p_value<0.05, 1, 0)
+cis$sig <- ifelse(cis$p_value<0.01, 1, 0)
 
 # check change in stat. sign. cities
 View(cis %>% filter(sig==1) %>% arrange(desc(delta_pct)))

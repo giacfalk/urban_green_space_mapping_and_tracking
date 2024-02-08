@@ -12,7 +12,7 @@ library(sf)
 library(tidyverse)
 library(raster)
 
-load("data/validation/after_points_new.Rdata")
+load("data/validation/after_points.Rdata")
 
 setwd("data/validation/")
 
@@ -32,6 +32,7 @@ setwd("data/validation/")
 
 sf <- read_sf("GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
 sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)
+sf_c <- sf_c[-68,]
 
 grr <- out_ndvi_m %>% group_by(city, year) %>% dplyr::summarise(out_b = median(out_b, na.rm=T))
 grr <- grr %>% group_by(city) %>% dplyr::mutate(out_b_diff = out_b[2]-out_b[1])
@@ -167,33 +168,22 @@ ggsave("Figure3.png", height = 10, width = 7.5)
 
 ######################
 # within city analysis
-# voronoi polygons
+# cluster polygons
 
-sf::sf_use_s2(F)
+setwd("C:/Users/falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking")
+fls <- list.files(pattern="clusters_")
+
+sf <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") %>% dplyr::select(UC_NM_MN, P15, GRGN_L1) %>% st_set_geometry(NULL) # Cities database
 
 ox_diagram_o <- list()
 
-for (i in unique(gvs[[1]]$city)){
-  print(i)
-  cents <- gvs[[1]]
-  cents <- filter(cents, city==i)
-  cents <-   cents %>% distinct(x, y, .keep_all = TRUE)
+for (i in fls){
+  print(match(i, fls))
   
-  if (nrow(cents)<2){
-    
-    ox_diagram_o[[i]] <- NA
-    
-  } else {
-    
-    library(ggvoronoi)
-    
-    ox_diagram <- voronoi_polygon(cents,x="x",y="y")
-    ox_diagram <- st_as_sf(ox_diagram)
-    st_crs(ox_diagram) <- 4326
-    ox_diagram <- st_transform(ox_diagram, 4326)
-    ox_diagram <- st_make_valid(ox_diagram)
-    ox_diagram <- st_intersection(ox_diagram, sf_c[sf_c$UC_NM_MN==ox_diagram$city[1],])
-    
+  ox_diagram <- read_sf(i)
+  
+  ox_diagram <- merge(ox_diagram, sf, by.x="city", by.y="UC_NM_MN")
+
     # pop extract
     
     pop = raster("data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
@@ -202,9 +192,9 @@ for (i in unique(gvs[[1]]$city)){
     ox_diagram <- ox_diagram %>% dplyr::arrange(out_b)
     ox_diagram <- ox_diagram %>% mutate(pop_c = cumsum(pop)/sum(pop))
     
-    ox_diagram_o[[i]] <- ox_diagram
+    ox_diagram_o[[match(i, fls)]] <- ox_diagram
     
-  }}
+  }
 
 ox_diagram_all <- bind_rows(ox_diagram_o)
 
@@ -225,7 +215,8 @@ pp <- ggplot()+
   ylab("")+
   scale_y_continuous(labels=scales::label_percent())+
   theme(legend.position = "none", legend.direction = "horizontal", legend.key.size = unit(0.2, "cm"))+
-  guides(colour=guide_legend(nrow=3,byrow=TRUE))
+  guides(colour=guide_legend(nrow=3,byrow=TRUE))+
+  xlim(c(0, 35))
 
 
 ox_diagram_regional <- ox_diagram_all %>% group_by(GRGN_L1) %>% dplyr::arrange(out_b) %>% mutate(pop_c = cumsum(pop)/sum(pop))
@@ -243,7 +234,8 @@ p_r <- ggplot(data=ox_diagram_regional, aes(y=pop_c, x=out_b, group = GRGN_L1, c
   ylab("Cum. frac. of population")+
   scale_y_continuous(labels=scales::label_percent())+
   theme(legend.position = "bottom", legend.direction = "horizontal", legend.key.size = unit(0.2, "cm"))+
-  guides(colour=guide_legend(nrow=4,byrow=TRUE))
+  guides(colour=guide_legend(nrow=4,byrow=TRUE))+
+  xlim(c(0, 35))
 
 library(patchwork)
 library(ggpubr)
@@ -257,58 +249,12 @@ lower_pane_fig_4 = (p_r + ggsci::scale_colour_npg(name="")) + (pp + scale_colour
 ggsave("Figure4_lower.png", lower_pane_fig_4, scale=1.5, height = 3.5, width = 6)
 
 
-####################
-
-cents <- gvs[[1]]
-cents <- filter(cents, city=="Rome")
-cents <-   cents %>% distinct(x, y, .keep_all = TRUE)
-
-if (nrow(cents)<2){
-  
-  ox_diagram_o[[i]] <- NA
-  
-} else {
-  
-  library(ggvoronoi)
-  
-  ox_diagram <- voronoi_polygon(cents,x="x",y="y")
-  ox_diagram <- st_as_sf(ox_diagram)
-  st_crs(ox_diagram) <- 4326
-  ox_diagram <- st_transform(ox_diagram, 4326)
-  ox_diagram <- st_intersection(ox_diagram, sf_c[sf_c$UC_NM_MN==ox_diagram$city[1],])
-  
-  # pop extract
-  
-  pop = raster("data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
-  ox_diagram$pop = exactextractr::exact_extract(pop, ox_diagram, "sum")
-  
-  ox_diagram <- ox_diagram %>% dplyr::arrange(out_b)
-  ox_diagram <- ox_diagram %>% mutate(pop_c = cumsum(pop)/sum(pop))
-  
-}
-
-gvi_rome_a <- ggplot(ox_diagram)+
-  theme_void()+
-  geom_sf(aes(fill=pop))+
-  scale_fill_distiller(palette = "Reds", name="Pop.", direction = 1)
-
-gvi_rome_b <- ggplot(ox_diagram)+
-  theme_void()+
-  geom_sf(aes(fill=out_b))+
-  scale_fill_distiller(palette = "Greens", name="GVI", direction = 1)
-
-upper_pane_fig_4 = gvi_rome_a + gvi_rome_b + plot_layout(ncol=2)
-
-ggsave("Figure4_upper.png", upper_pane_fig_4, scale=2, height = 3.5, width = 6)
-
 ###############
-
-ox_diagram_all <- bind_rows(ox_diagram_o)
 
 library(acid)
 library(matrixStats)
 
-gg <- (ox_diagram_all %>%  st_set_geometry(NULL) %>% ungroup() %>% group_by(city, year) %>% dplyr::summarise(gini=as.numeric(acid::weighted.gini(x=out_b, w=pop_c)), gvi=matrixStats::weightedMedian(x=out_b, w=pop_c, na.rm=T)))
+gg <- (ox_diagram_all %>%  st_set_geometry(NULL) %>% ungroup() %>% group_by(city) %>% dplyr::summarise(gini=as.numeric(acid::weighted.gini(x=out_b, w=pop_c)), gvi=matrixStats::weightedMedian(x=out_b, w=pop_c, na.rm=T)))
 
 gg <- gg %>% ungroup() %>% group_by(city) %>% dplyr::summarise(gini=mean(gini), gvi=mean(gvi))
 
@@ -317,6 +263,6 @@ gg <- arrange(gg, desc(gini))
 library(xtable)
 
 sink(paste0(getwd(), "/gini_table.tex"))
-tableSb <- xtable(gg, caption = "Gini indexes of GVI exposure", label = "tab:gini")
+tableSb <- xtable(gg, caption = "Gini indexes of GVI exposure in 2022", label = "tab:gini")
 print(tableSb, include.rownames=F, tabular.environment="longtable", floating=FALSE)
 sink()

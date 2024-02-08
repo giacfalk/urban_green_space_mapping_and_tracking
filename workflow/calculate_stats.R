@@ -13,7 +13,7 @@ library(ggrepel)
 library(sf)
 library(tidyverse)
 
-load("data/validation/after_points_new.Rdata")
+load("data/validation/after_points.Rdata")
 
 setwd("data/validation/")
 

@@ -1,6 +1,6 @@
 ###############
 
-youremail = "test@gmail.com" # GEE-enabled email address
+youremail = "giacomo.falchetta@gmail.com" # GEE-enabled email address
 
 # predict for another city
 # samplepoints within FUA city boundary
@@ -30,7 +30,7 @@ get_countries <-  function(long, lat)
 
 library(googledrive)
 googledrive::drive_auth(email=youremail)
-gvs <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'", n_max = 1000, orderBy = "recency desc")
+gvs <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'", n_max = 5000, orderBy = "recency desc")
 gvs <- gvs[!grepl("lc", gvs$name),]
 gvs <- gvs[!grepl("era", gvs$name),]
 gvs <- gvs[!grepl("pop", gvs$name),]
@@ -43,7 +43,7 @@ for (i in 1:nrow(gvs)){
 
 gvs <- lapply(gvs$local_path, read.csv)
 
-gvsnames <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'", n_max = 1000, orderBy = "recency desc")
+gvsnames <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'", n_max = 5000, orderBy = "recency desc")
 gvsnames <- gvsnames[!grepl("lc", gvsnames$name),]
 gvsnames <- gvsnames[!grepl("era", gvsnames$name),]
 gvsnames <- gvsnames[!grepl("pop", gvsnames$name),]
@@ -52,7 +52,7 @@ gvsnames <- ifelse(grepl("2022", gvsnames$name), "2022", "2016")
 
 ###
 
-gvs2 <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'lc'", n_max = 1000, orderBy = "recency desc")
+gvs2 <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'lc'", n_max = 5000, orderBy = "recency desc")
 gvs2$local_path <- NA
 gvs2 <- arrange(gvs2, desc(name))
 
@@ -62,12 +62,12 @@ for (i in 1:nrow(gvs2)){
 
 gvs2 <- lapply(gvs2$local_path, read.csv)
 
-gvs2names <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'lc'", n_max = 1000, orderBy = "recency desc")
+gvs2names <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'lc'", n_max = 5000, orderBy = "recency desc")
 gvs2names <- ifelse(grepl("2022", gvs2names$name), "2022", "2016")
 
 ###
 
-gvs3 <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'points_pop'", n_max = 1000, orderBy = "recency desc")
+gvs3 <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'points_pop'", n_max = 5000, orderBy = "recency desc")
 gvs3$local_path <- NA
 
 for (i in 1:nrow(gvs3)){
@@ -78,7 +78,7 @@ gvs3 <- lapply(gvs3$local_path, read.csv)
 
 ###
 
-gvs4 <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'points_era'", n_max = 1000, orderBy = "recency desc")
+gvs4 <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'points_era'", n_max = 5000, orderBy = "recency desc")
 gvs4$local_path <- NA
 
 for (i in 1:nrow(gvs4)){
@@ -87,7 +87,7 @@ for (i in 1:nrow(gvs4)){
 
 gvs4 <- lapply(gvs4$local_path, read.csv)
 
-gvs4names <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'points_era'", n_max = 1000, orderBy = "recency desc")
+gvs4names <- drive_find(q="name contains 'cities_sampled' AND name contains 'csv'AND name contains 'points_era'", n_max = 5000, orderBy = "recency desc")
 gvs4names <- ifelse(grepl("2022", gvs4names$name), "2022", "2016")
 
 ###
@@ -121,14 +121,16 @@ rm(gvs_b)
 gvs[[2]]$year <- 2016
 gvs[[1]]$year <- 2022
 
+# save.image("bk_while_processing.Rdata")
+
+load("bk_while_processing.Rdata")
+
 for (i in 1:2){
   gvs[[i]]$system.index <- sub("\\_.*", "", gvs[[i]]$system.index)
   gvs[[i]]$system.index <- as.numeric(gvs[[i]]$system.index) + 1
-  gvs[[i]] <- na.omit(gvs[[i]])
   colnames(gvs[[i]])[18:19] <- c("x", "y")
   gvs[[i]]$.geo <- NULL
   gvs[[i]] <- pivot_wider(gvs[[i]], names_from = 1 , values_from = c(2:17, 21), names_glue = "{.value}_{system.index}", values_fn = mean)
-  gvs[[i]] <- na.omit(gvs[[i]])
   gvs[[i]]$merger <- as.character(paste0(gvs[[i]]$x, gvs[[i]]$y))
   
 }
@@ -139,10 +141,9 @@ gvs2[[1]]$year <- 2022
 for (i in 1:2){
   gvs2[[i]]$system.index <- sub("\\_.*", "", gvs2[[i]]$system.index)
   gvs2[[i]]$system.index <- as.numeric(gvs2[[i]]$system.index) + 1
-  gvs2[[i]] <- na.omit(gvs2[[i]])
   gvs2[[i]]$.geo <- NULL
   gvs2[[i]]$merger <- as.character(paste0(gvs2[[i]]$X, gvs2[[i]]$Y))
-  gvs2[[i]] <- dplyr::select(gvs2[[i]], 4, 5, 7:16)
+  gvs2[[i]] <- dplyr::select(gvs2[[i]], 4:8, 11:14, 16, 17)
 }
 
 
@@ -152,7 +153,6 @@ gvs3[[1]]$year <- 2022
 for (i in 1:2){
   gvs3[[i]]$system.index <- sub("\\_.*", "", gvs3[[i]]$system.index)
   gvs3[[i]]$system.index <- as.numeric(gvs3[[i]]$system.index) + 1
-  gvs3[[i]] <- na.omit(gvs3[[i]])
   gvs3[[i]]$.geo <- NULL
   gvs3[[i]]$merger <- as.character(paste0(gvs3[[i]]$X, gvs3[[i]]$Y))
   gvs3[[i]] <- dplyr::select(gvs3[[i]], median, merger, year)
@@ -165,11 +165,9 @@ gvs4[[1]]$year <- 2022
 for (i in 1:2){
   gvs4[[i]]$system.index <- sub("\\_.*", "", gvs4[[i]]$system.index)
   gvs4[[i]]$system.index <- as.numeric(substr(gvs4[[i]]$system.index, 5, 6))
-  gvs4[[i]] <- na.omit(gvs4[[i]])
   colnames(gvs4[[i]])[2:3] <- c("x", "y")
   gvs4[[i]]$.geo <- NULL
   gvs4[[i]] <- pivot_wider(gvs4[[i]], names_from = 1 , values_from = c(5:9), names_glue = "{.value}_{system.index}", values_fn = mean)
-  gvs4[[i]] <- na.omit(gvs4[[i]])
   gvs4[[i]]$merger <- as.character(paste0(gvs4[[i]]$x, gvs4[[i]]$y))
   gvs4[[i]] <- dplyr::select(gvs4[[i]], -x, -y, -city)
   
@@ -250,16 +248,26 @@ gdata::keep(gvs, gvs2, gvs3, gvs4, gvs2names, gvs4names, gvsnames, get_countries
 
 save.image("data/validation/after_points_step1.Rdata")
 
-load("data/validation/after_rf_multispectral_gee.Rdata")
+load("data/validation/after_points_step1.Rdata")
+
 
 #########
+
+library(h2o)
+h2o.init()
+saved_model <- h2o.loadModel("h2ofilesgreen/xgbLog5hNNrmseHubFinalALL")
 
 out_ndvi_m <- list()
 
 for (i in 1:2){
   
-out_ndvi_m[[i]] <- predict(rrfFit, gvs[[i]])
-gvs[[i]]$out_b <- out_ndvi_m[[i]]
+  pr_2016 <- h2o::h2o.predict(saved_model,  as.h2o( gvs[[i]][complete.cases( gvs[[i]]),]))
+
+  out_ndvi_m[[i]] <- exp(as.data.frame(pr_2016)$predict)
+
+  gvs[[i]] <- na.omit(gvs[[i]])
+  
+  gvs[[i]]$out_b <- out_ndvi_m[[i]]
 
 }
 
