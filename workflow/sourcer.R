@@ -2,41 +2,39 @@ setwd("C:/Users/falchetta/OneDrive - IIASA/Current papers/greening")
 
 setwd("./urban_green_space_mapping_and_tracking")
 
-source("workflow/merge_and_prepare_data_all_cities.R")
+##########
 
-source("workflow/string_generator.R")
+# model training
+
+file.edit("workflow/merge_and_prepare_data_all_cities.R")
+
+file.edit("workflow/string_generator_training.R")
 
 # data preparation in GEE happening here, "greenview_export.js" script #
 
-source("workflow/nnListCalc.R")
+file.edit("workflow/prepare_training_data.R")
 
-source("workflow/modelScript.R")
+file.edit("workflow/city_greenness_window_and_obs_distribution.R")
 
-source("workflow/generate_shapefile_for_js_gee_extraction.R")
-  
-source("workflow/process_roads.R")
+file.edit("workflow/modelScript.R")
+
+##########
+
+# prediction
+
+file.edit("workflow/process_roads.R")
+
+file.edit("workflow/string_generator_prediction.R")
 
 # data preparation in GEE happening here, "greenview_cities_extrapolate.js" script #
 
-source("workflow/predictions_cities.R")
+file.edit("workflow/cities_predict.R")
 
-source("workflow/valid_figure.R")
+##########
 
-source("workflow/cluster_points_along_roads.R")
+# results and figures 
 
-source("workflow/make_main_figures.R")
+file.edit("workflow/make_main_figures.R")
 
-setwd("workflow")
+file.edit("workflow/summary_table.R")
 
-source("workflow/calculate_stats.R")
-
-setwd("workflow")
-
-source("workflow/summary_table.R")
-
-source("workflow/make_figures_si.R")
-
-####
-
-p_s <- data.frame(X=c(0), Y=(51.483))
-source("workflow/on_demand_gvi_estimator.R")

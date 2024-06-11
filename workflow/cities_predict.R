@@ -1,3 +1,15 @@
+
+##############################################################################
+
+# This Rscript: 
+
+#   1) Use trained model and prediction data to make predictions in the sampled points
+
+##############################################################################
+
+rm(list=ls(all=TRUE)) # Removes all previously created variables
+gc() 
+
 ###############
 
 youremail = "giacomo.falchetta@gmail.com" # GEE-enabled email address
@@ -121,9 +133,9 @@ rm(gvs_b)
 gvs[[2]]$year <- 2016
 gvs[[1]]$year <- 2022
 
-# save.image("bk_while_processing.Rdata")
+# save.image("bk_while_processing_090524.Rdata")
 
-load("bk_while_processing.Rdata")
+load("bk_while_processing_090524.Rdata")
 
 for (i in 1:2){
   gvs[[i]]$system.index <- sub("\\_.*", "", gvs[[i]]$system.index)
@@ -143,7 +155,7 @@ for (i in 1:2){
   gvs2[[i]]$system.index <- as.numeric(gvs2[[i]]$system.index) + 1
   gvs2[[i]]$.geo <- NULL
   gvs2[[i]]$merger <- as.character(paste0(gvs2[[i]]$X, gvs2[[i]]$Y))
-  gvs2[[i]] <- dplyr::select(gvs2[[i]], 4:8, 11:14, 16, 17)
+  gvs2[[i]] <- dplyr::select(gvs2[[i]], 4:8, 11:14, 15, 16)
 }
 
 
@@ -169,7 +181,7 @@ for (i in 1:2){
   gvs4[[i]]$.geo <- NULL
   gvs4[[i]] <- pivot_wider(gvs4[[i]], names_from = 1 , values_from = c(5:9), names_glue = "{.value}_{system.index}", values_fn = mean)
   gvs4[[i]]$merger <- as.character(paste0(gvs4[[i]]$x, gvs4[[i]]$y))
-  gvs4[[i]] <- dplyr::select(gvs4[[i]], -x, -y, -city)
+  gvs4[[i]] <- dplyr::select(gvs4[[i]], -x, -y)
   
 }
 
@@ -180,9 +192,25 @@ library(nngeo)
 library(countrycode)
 
 for (i in 1:2){
-  gvs[[i]] <- merge(gvs[[i]], gvs2[[i]], by=c("merger", "year"))
-  gvs[[i]] <- merge(gvs[[i]], gvs3[[i]], by=c("merger", "year"))
-  gvs[[i]] <- merge(gvs[[i]], gvs4[[i]], by=c("merger", "year"))
+  
+  gvs2[[i]] <- gvs2[[i]] %>% dplyr::select(-merger, -year)
+  gvs3[[i]] <- gvs3[[i]]  %>% dplyr::select(-merger, -year)
+  gvs4[[i]] <- gvs4[[i]] %>% dplyr::select(-merger, -year, -id)
+  
+  gvs[[i]] <- bind_cols(gvs[[i]], gvs2[[i]], gvs3[[i]], gvs4[[i]])
+  
+  gvs[[i]] <-  gvs[[i]] %>% drop_na(x,y)
+  
+  gvs[[i]] <- st_as_sf(gvs[[i]], coords=c("x", "y"), crs=3395)
+  gvs[[i]] <- st_transform(gvs[[i]], 4326)
+  
+  cs <- st_coordinates( gvs[[i]])
+  cs <- as.data.frame(cs)
+  
+  gvs[[i]]$x <- cs$X  
+  gvs[[i]]$y <- cs$Y
+  
+  gvs[[i]]$geometry <- NULL
   
   gvs[[i]]$country <- as.character(get_countries(gvs[[i]]$x, gvs[[i]]$y))
   gvs[[i]]$country <- countrycode(gvs[[i]]$country, 'country.name', 'iso2c')
@@ -227,48 +255,50 @@ for (i in 1:2){
   library(pbapply)
   
   for (vv in vars){
-  print(vv)
-  vvv<-unlist(pblapply(result1,function(x){
-    nn<-x[-1]
-    median(gvs[[i]][nn,vv], na.rm=T)
-  }))
-  
-  gvs[[i]] <- bind_cols(gvs[[i]], vvv)
-  
+    print(vv)
+    vvv<-unlist(pblapply(result1,function(x){
+      nn<-x[-1]
+      median(gvs[[i]][nn,vv], na.rm=T)
+    }))
+    
+    gvs[[i]] <- bind_cols(gvs[[i]], vvv)
+    
   }
   
 }
 
-colnames( gvs[[1]])[285:289] <- c("medTrees","medBare","medWater","medGrass","medPop")
-colnames( gvs[[2]])[285:289] <- c("medTrees","medBare","medWater","medGrass","medPop")
+colnames( gvs[[1]])[284:288] <- c("medTrees","medBare","medWater","medGrass","medPop")
+colnames( gvs[[2]])[284:288] <- c("medTrees","medBare","medWater","medGrass","medPop")
 
 library(gdata)
 
 gdata::keep(gvs, gvs2, gvs3, gvs4, gvs2names, gvs4names, gvsnames, get_countries, sure=T)
 
-save.image("data/validation/after_points_step1.Rdata")
+save.image("after_points_step1_090524.Rdata")
 
-load("data/validation/after_points_step1.Rdata")
+# load("after_points_step1_090524.Rdata")
 
+gvs[[1]]$merger <-  as.character(paste0(gvs[[1]]$x, gvs[[1]]$y))
+gvs[[2]]$merger <-  as.character(paste0(gvs[[2]]$x, gvs[[2]]$y))
 
 #########
 
 library(h2o)
 h2o.init()
-saved_model <- h2o.loadModel("h2ofilesgreen/xgbLog5hNNrmseHubFinalALL")
+saved_model <- h2o.loadModel("C:/Users/Utente/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/h2ofilesgreen/xgbLog5hNNrmseHubFinalALL")
 
 out_ndvi_m <- list()
 
 for (i in 1:2){
   
   pr_2016 <- h2o::h2o.predict(saved_model,  as.h2o( gvs[[i]][complete.cases( gvs[[i]]),]))
-
+  
   out_ndvi_m[[i]] <- exp(as.data.frame(pr_2016)$predict)
-
+  
   gvs[[i]] <- na.omit(gvs[[i]])
   
   gvs[[i]]$out_b <- out_ndvi_m[[i]]
-
+  
 }
 
 out_ndvi_m <- gvs
@@ -278,4 +308,35 @@ out_ndvi_m <- bind_rows(out_ndvi_m)
 
 rm(list=setdiff(ls(), c("gvs","out_ndvi_m")))
 
-save.image("data/validation/after_points.Rdata")
+save.image("C:/Users/Utente/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points_090524.Rdata")
+
+###
+
+library(caret)
+library(CAST)
+library(rworldmap)
+library(countrycode)
+library(wbstats)
+library(rasterVis)
+require(rgdal)
+require(maptools)
+library(ggthemes)
+library(ggrepel)
+library(sf)
+library(tidyverse)
+library(raster)
+
+load("data/validation/after_points_090524.Rdata")
+
+###
+
+out_ndvi_m_old <- out_ndvi_m
+
+  load("data/validation/after_points_090524.Rdata")
+
+summary(abs(out_ndvi_m_old$out_b - out_ndvi_m$out_b))
+hist(out_ndvi_m_old$out_b - out_ndvi_m$out_b)
+
+###
+
+

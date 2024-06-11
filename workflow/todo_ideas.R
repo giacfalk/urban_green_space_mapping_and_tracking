@@ -1,1 +1,0 @@
-Figure 2/stats: perhaps population weighted stats (in substitution or in addition)

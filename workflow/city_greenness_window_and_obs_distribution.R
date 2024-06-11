@@ -1,3 +1,71 @@
+
+
+##############################################################################
+
+# This Rscript: 
+
+#   1) Create some additional plots and descriptive statistics on the training data
+
+##############################################################################
+
+rm(list=ls()) 
+gc()
+
+library(caret)
+library(CAST)
+library(rworldmap)
+library(countrycode)
+library(wbstats)
+library(rasterVis)
+require(rgdal)
+require(maptools)
+library(ggthemes)
+library(ggrepel)
+library(sf)
+library(tidyverse)
+library(raster)
+
+load("data/validation/after_gee_multispectral_gee_170524.Rdata")
+
+out_ndvi_m$month <- as.numeric(unlist(lapply(1:nrow(out_ndvi_m), function(i){strsplit(out_ndvi_m$panoDate[i], "-")}))[nchar(unlist(lapply(1:2, function(i){strsplit(out_ndvi_m$panoDate[i], "-")})))==2])
+
+out_ndvi_m$begin <- NA
+out_ndvi_m$begin[out_ndvi_m$city %in% unique(out_ndvi_m$city)[c(1,3,5,6,13,14,19,20,22, 8, 9, 10, 23)]] <- 4
+out_ndvi_m$end <- NA
+out_ndvi_m$end[out_ndvi_m$city %in% unique(out_ndvi_m$city)[c(1,3,5,6,13,14,19,20,22, 8, 9, 10, 23)]] <- 10
+
+out_ndvi_m$begin[out_ndvi_m$city %in% unique(out_ndvi_m$city)[c(4, 7, 12, 18)]] <- 10
+out_ndvi_m$end[out_ndvi_m$city %in% unique(out_ndvi_m$city)[c(4, 7, 12, 18)]] <- 4
+
+out_ndvi_m$begin <- ifelse(is.na(out_ndvi_m$begin), 1, out_ndvi_m$begin)
+out_ndvi_m$end <- ifelse(is.na(out_ndvi_m$end), 12, out_ndvi_m$end)
+
+##
+
+
+out_ndvi_m$city <- gsub("green_index", "", out_ndvi_m$city)
+out_ndvi_m$city <- gsub("green_view", "", out_ndvi_m$city)
+out_ndvi_m$city <- gsub("greenview", "", out_ndvi_m$city)
+out_ndvi_m$city <- gsub("_", "", out_ndvi_m$city)
+
+##
+
+ggplot(out_ndvi_m)+
+  theme_classic()+
+  geom_histogram(aes(x=month, y = after_stat(count / sum(count))*100))+
+  facet_wrap(vars(city))+
+  geom_vline(aes(xintercept=begin, colour="Begin"))+
+  geom_vline(aes(xintercept=end, colour="End"))+
+  scale_x_continuous(breaks = c(3,6,9,12))+
+  xlab("Month")+
+  ylab("% of total observations")+
+  scale_colour_manual(name="", values=c("lightgreen", "orange"))+
+  ggtitle("Distribution of training data acquisition date, by city")
+
+ggsave("monthly_distribution_training_data.png", height = 5, width = 5, scale=1.1)
+
+###
+
 library(sf)
 library(tidyverse)
 library(lubridate)

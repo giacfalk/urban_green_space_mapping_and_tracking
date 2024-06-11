@@ -10,3 +10,6 @@ workflow/data_cities/data_cities.7z
 h2ofilesgreen/xgbLog5hNNrmseHub
 h2ofilesgreen/xgbLog5hNNrmseHubFinal
 h2ofilesgreen/xgbLog5hNNrmseHubFinalALL
+clusters_1.gpkg
+*.gpkg
+*.png

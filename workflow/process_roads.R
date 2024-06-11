@@ -1,3 +1,17 @@
+
+
+##############################################################################
+
+# This Rscript: 
+
+#   1) Sample prediction points along roads in world cities
+#   2) Upload sampled points to GEE
+
+##############################################################################
+
+rm(list=ls(all=TRUE)) # Removes all previously created variables
+gc() 
+
 library(raster)
 library(sf)
 library(tidyverse)
@@ -37,8 +51,6 @@ split_bbox <- function(bbox, n_x = 2, n_y = 2) {
   
   return(bounding_boxes)
 }
-
-setwd("C:/Users/falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking")
 
 ####
 
@@ -128,5 +140,3 @@ for (i in ( 1:nrow(cities))[-68]){
   output_items[[i]] <- st_transform(output_items[[i]], 4326)
   sf_as_ee(output_items[[i]], via="gcs_to_asset", bucket = "accessibility_jack", assetId=paste0("users/giacomofalchetta/cities_sampled_points_", i, ".shp"), overwrite = T, monitoring=F)
 }
-  
-
