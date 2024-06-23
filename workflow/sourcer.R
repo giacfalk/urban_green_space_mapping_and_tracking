@@ -1,9 +1,9 @@
-setwd("C:/Users/falchetta/OneDrive - IIASA/Current papers/greening")
+# Tracking green space along streets of world cities
+# Giacomo Falchetta and Ahmed T. Hammad 
 
 setwd("./urban_green_space_mapping_and_tracking")
 
 ##########
-
 # model training
 
 source("workflow/merge_and_prepare_data_all_cities.R")
@@ -19,7 +19,6 @@ source("workflow/city_greenness_window_and_obs_distribution.R")
 source("workflow/modelScript.R")
 
 ##########
-
 # prediction
 
 source("workflow/process_roads.R")
@@ -33,7 +32,6 @@ source("workflow/cities_predict_multiyear.R")
 source("workflow/cluster_points_along_roads.R")
 
 ##########
-
 # results and figures 
 
 source("workflow/make_main_figures.R")
@@ -41,7 +39,6 @@ source("workflow/make_main_figures.R")
 source("workflow/summary_table.R")
 
 ##########
-
 # supplementary analysis
 
 source("workflow/random_sample_test.R")
