@@ -24,6 +24,8 @@ library(sf)
 library(tidyverse)
 library(raster)
 library(dplyr)
+pacman::p_load(data.table,panelr,jtools, ggplot2,purrr,xtable,texreg,
+               fixest,lmtest,caret,MLmetrics,sandwich)
 
 load("data/validation/after_points_030624.Rdata")
 
@@ -49,24 +51,59 @@ sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)
 ###
 
 out_ndvi_m$city <- sf_c$UC_NM_MN[as.numeric((sapply(strsplit(out_ndvi_m$id,"_"), `[`, 1)))]
-# 
-# out_ndvi_m <- st_as_sf(out_ndvi_m, coords = c("x", "y"), crs=4326)
-# 
-# library(nngeo)
-# 
-# sf_use_s2(F)
-# 
-# out_ndvi_m <- st_join(out_ndvi_m %>% st_transform(3395), sf_c %>% dplyr::select(UC_NM_MN) %>% st_transform(3395), st_nn, maxdist=50000, k=1)
 
-library(fixest)
+#----------------------------------------
+summ(baseModel<-lm(log(out_b)~year,data=out_ndvi_m),digits=4,robust=TRUE)
+baseModel<-coeftest(baseModel, vcov = vcovHC(baseModel), type = "HC0")
+baseModel
+(exp(-5.0936e-03) - 1)*100
 
-model <- feols(log(out_b)~year  , data = out_ndvi_m)
-summary(model)
+#----------------------------------------
+# Convert to pdata.frame
+# pdata <- pdata.frame(out_ndvi_m, index = c("id","year"))
+# model_fe <- plm(log(out_b) ~ year, data = pdata, model = "within")
+# summary(model_fe,vcov = vcovHC(model_fe), type = "HC0")
+#median(model_fe$coefficients)
+#The coefficients indicate how log(GVI) has changed each year compared to the 
+#base year (2016). log(GVI) generally decreased from 2016 to 2023,
+#with a few fluctuations, such as an increase in 2021 corresponding to post-COVID. 
+#----------------------------------------
 
-model <- feols(out_b~year  , data = out_ndvi_m)
-summary(model)
+model_fe_sample_extra1<-feols(log(out_b) ~ year| id , data = out_ndvi_m)
 
-(exp(coef(model)[2])-1)*100
+model_fe_sample_extra2<-feols(log(out_b) ~ year| id + city , data = out_ndvi_m)
+
+model_fe_sample_extra3<-feols(log(out_b) ~ factor(year) , data = out_ndvi_m)
+
+model_fe_sample_extra4<-feols(log(out_b) ~ factor(year)| id , data = out_ndvi_m)
+
+model_fe_sample_extra5<-feols(log(out_b) ~ factor(year)| id + city , data = out_ndvi_m)
+
+# FE model with yearly dummies to consider non-linearity
+# consistent negative effect w.r.t. 2016
+# 2021 (post-covid) is positive
+
+screenreg(list(baseModel,model_fe_sample_extra1,model_fe_sample_extra2, model_fe_sample_extra3, model_fe_sample_extra4,model_fe_sample_extra5),digits = 3,
+          custom.model.names =c("Trend (OLS)","Trend - Fixed Effects (Sample)","Trend - Fixed Effects (Sample + city)", "Dummies (OLS)", "Dummies - Fixed Effects (sample)", "Dummies - Fixed Effects (sample + city)"),
+          custom.note = "%stars. Robust standard errors in parentheses.",
+          include.rsquared = FALSE,
+          include.adjrs = FALSE,
+          include.nobs = FALSE,
+          include.rmse = FALSE)
+
+(exp(mean(coef(model_fe_sample_extra4))) -1)*100 # avg. difference w.r.t. 2016, about 4x times the avg. yearly time trend
+
+texreg(list(baseModel,model_fe_sample_extra1,model_fe_sample_extra2, model_fe_sample_extra3, model_fe_sample_extra4,model_fe_sample_extra5),digits = 3,
+       custom.model.names =c("Trend (OLS)","Trend - Fixed Effects (Sample)","Trend - Fixed Effects (Sample + city)", "Dummies (OLS)", "Dummies - Fixed Effects (sample)", "Dummies - Fixed Effects (sample + city)"),
+       custom.note = "%stars. Robust standard errors in parentheses.",
+       include.rsquared = FALSE,
+       caption="",
+       include.adjrs = FALSE,
+       include.nobs = FALSE,
+       include.rmse = FALSE,
+       file="reg_tab.tex")
+#        dcolumn = TRUE, booktabs = TRUE,use.packages = FALSE,float.pos = "h")
+
 
 mean(out_ndvi_m$out_b, na.rm=T)
 
@@ -80,6 +117,8 @@ grr <- grr %>% group_by(city) %>% dplyr::mutate(out_b_diff = out_b[8]-out_b[1])
 grr <- merge(grr, sf_c, by.x="city", by.y="UC_NM_MN")
 grr <- st_as_sf(grr)
 grr <- st_transform(grr, "ESRI:54009")
+
+####
 
 data(wrld_simpl)
 wrld_simpl_sf <- st_as_sf(wrld_simpl)
@@ -121,17 +160,10 @@ grrregio = grr %>% st_set_geometry(NULL) %>%  group_by(city, GRGN_L1,GRGN_L2, ye
 
 library(broom)
 
-fitted_models <- out_ndvi_m %>% nest(data = -city) %>% mutate(model = map(data, ~lm(out_b~year, data = .)), tidied = map(model, tidy)) %>% unnest(tidied)
+fitted_models <- out_ndvi_m %>% nest(data = -city) %>% mutate(model = map(data, ~feols(log(out_b)~year | id, data = .)), tidied = map(model, tidy)) %>% unnest(tidied)
 fitted_models <- filter(fitted_models, term=="year") %>% dplyr::select(city, estimate, std.error, p.value)
 
 ##
-
-library(panelr)
-
-# wages <- panel_data(out_ndvi_m, id = id, wave = year)
-# line_plot(wages, out_b, add.mean = f, subset.ids = TRUE, overlay = FALSE)
-
-###
 
 sum(fitted_models$p.value<0.01)/nrow(fitted_models)*100
 
@@ -142,7 +174,36 @@ grr$GRGN_L2[grr$GRGN_L2=="Australia/New Zealand"] = "Oceania"
 
 out_ndvi_m$GRGN_L1 <- sf_c$GRGN_L1[match(out_ndvi_m$city, sf_c$UC_NM_MN)]
 
-grrregio_pval <- out_ndvi_m %>% nest(data = -GRGN_L1) %>% mutate(model = map(data, ~lm(out_b~year, data = .)), tidied = map(model, tidy)) %>% unnest(tidied)
+
+###
+
+cis <- grr
+cis <- dplyr::select(cis, city, year, out_b)
+cis$geometry<-NULL
+cis <- ungroup(cis) %>% filter(city!="N/A")
+
+cis <- pivot_wider(cis, id_cols = c(1), names_from = c(2), values_from = c(3))
+
+cis2 <- grr
+cis2 <- dplyr::select(cis2, city, year, p.value, estimate)
+cis2$geometry<-NULL
+cis2 <- ungroup(cis2) %>% filter(city!="N/A")
+cis2 <- cis2 %>% group_by(city) %>% dplyr::summarise(estimate=mean(round(estimate, 3)*100), p.value=mean(p.value, 3))
+
+cis <- merge(cis, cis2, "city")
+
+colnames(cis) <- c("City", "GVI, 2016", "GVI, 2017", "GVI, 2018", "GVI, 2019", "GVI, 2020", "GVI, 2021", "GVI, 2022", "GVI, 2023", "Estimated avg. % change / yr.", "p-value of change trend")
+
+library(xtable)
+
+sink(paste0(getwd(), "/tab_all.tex"))
+tableSb <- xtable(cis)
+print(tableSb, include.rownames=F, tabular.environment="longtable", floating=FALSE)
+sink()
+
+###
+
+grrregio_pval <- out_ndvi_m %>% nest(data = -GRGN_L1) %>% mutate(model = map(data, ~feols(log(out_b)~year | id + city, data = .)), tidied = map(model, tidy)) %>% unnest(tidied)
 grrregio_pval <- filter(grrregio_pval, term=="year") %>% dplyr::select(GRGN_L1, estimate, std.error, p.value)
 
 grr$geometry <- NULL
@@ -161,7 +222,7 @@ grrregiolab$GRGN_L1[grrregiolab$GRGN_L1=="Latin America and the Caribbean"] <- "
 fig2a <- ggplot()+
   theme_classic()+
   geom_boxplot2(data= grrregio, aes(y=out_b, x=reorder(GRGN_L1, -ordvar), fill=as.factor(year)), width.errorbar = 0.15)+
-  geom_text(data = grrregiolab, aes(y=10, x=reorder(GRGN_L1, -ordvar), label=ifelse(pval==0, "p<0.01", paste0("p=", pval))))+
+  geom_text(data = grrregiolab, aes(y=5, x=reorder(GRGN_L1, -ordvar), label=ifelse(pval==0, "p<0.01", paste0("p=", pval))))+
   xlab("")+
   ylab("GVI macro-region range of city-level medians")+
   scale_fill_brewer(name="Year", palette = "Greens")+
@@ -193,9 +254,13 @@ slice_min_max <- function(df, order_by = value, n = 1) {
 
 grr <- filter(grr, !is.na(city) & city!="N/A")
 
-grr_top_sel <- sf_c %>% dplyr::group_by(GRGN_L2) %>% slice_max(P15, n = 3) %>% pull(UC_NM_MN)
+grr_top_sel <- sf_c %>% ungroup() %>% slice_max(P15, n = 50) %>% pull(UC_NM_MN)
+
+rm(gvs); gc()
 
 grr_top <- filter(grr, city %in% grr_top_sel)
+
+grr_top <- dplyr::select(grr_top, city, year)
 
 grr_top <- merge(grr_top, fitted_models, by.x="city")
 
@@ -206,22 +271,26 @@ grrregio_f <- grrregio %>% group_by(city) %>% filter(year==2023) %>% sample_n(1)
 #remotes::install_github('rpkgs/gg.layers')
 library(gg.layers)
 
+library(scales)
+
 fig2b <- ggplot()+
   theme_classic()+
   geom_hline(yintercept = 0, colour="black", alpha=0.25)+
-  geom_errorbar(data= grrregio_f %>% filter(year==2016 | year==2023), aes(ymin=estimate+std.error*2.576, ymax=estimate-std.error*2.576, x=reorder(city, -ordvar), colour=as.factor(p.value<0.01)))+
+  geom_errorbar(data= grrregio_f %>% filter(year==2016 | year==2023), aes(ymin=estimate+std.error*2.576, ymax=estimate-std.error*2.576, x=reorder(city, -ordvar)))+
   xlab("")+
-  ylab("Avg. yearly change in city-level GVI, 2016-2023")+
-  theme(axis.text.x = element_text(angle = 45, hjust=1), legend.position = "bottom", legend.direction = "horizontal")
+  ylab("Avg. % yearly change in city-level GVI, 2016-2023")+
+  theme(axis.text.x = element_text(angle = 45, hjust=1), legend.position = "bottom", legend.direction = "horizontal")+
+  scale_y_continuous(labels = percent)
 
 library(patchwork)
 library(ggsci)
 
-(((fig2a + scale_fill_brewer(name="Year", palette="Greens")) + (fig2b + scale_colour_manual(name="p<0.01", values=c("darkred", "forestgreen")))) & theme(legend.position = "bottom")) + plot_layout(ncol=1) + plot_annotation(tag_levels = "A")
+(((fig2a + scale_fill_brewer(name="Year", palette="Greens")) + (fig2b)) & theme(legend.position = "bottom")) + plot_layout(ncol=1) + plot_annotation(tag_levels = "A")
 
 ggsave("Figure3.png", height = 10, width = 7.5)
+ggsave("Figure3.pdf", height = 10, width = 7.5)
 
-######################
+  ######################
 # within city analysis
 # cluster polygons
 
@@ -336,6 +405,23 @@ for (c in unique(paste0(ox_diagram_all_sel$city, "_", ox_diagram_all_sel$GRGN_L1
   
 }
 
+#
+
+c <- "Johannesburg_Africa"
+
+aa <- ox_diagram_all_sel %>% dplyr::filter(city==unlist(strsplit(c, "_"))[1] & GRGN_L1==unlist(strsplit(c, "_"))[2])
+
+ctry <- aa$GRGN_L1
+
+ggplot()+
+  annotation_map_tile(zoom = 12)+
+  theme_classic()+
+  geom_sf(data=sf %>% filter(UC_NM_MN==c), colour="black", fill="transparent", )+
+  geom_sf(data=aa, aes(fill=out_b))+
+  scale_fill_distiller(name="GVI", palette = "Greens", direction = 1)+
+  ggtitle(paste0("C                                                      ", unlist(strsplit(c, "_"))[1]))
+  
+ggsave("Figure4_example.png", height = 5, width = 5, scale=1.2)
 
 ###############
 
@@ -353,7 +439,7 @@ gg <- arrange(gg, desc(gini))
 library(xtable)
 
 sink(paste0(getwd(), "/gini_table.tex"))
-tableSb <- xtable(gg, caption = "Gini indexes of GVI exposure in 2016-2023", label = "tab:gini")
+tableSb <- xtable(gg, caption = "Gini indexes of GVI exposure to the residential population, 2016-2023 average", label = "tab:gini")
 print(tableSb, include.rownames=F, tabular.environment="longtable", floating=FALSE)
 sink()
 
@@ -364,9 +450,11 @@ sink()
 ###################################
 # calculate statistics
 
-out_ndvi_m %>% group_by(city, year) %>% dplyr::summarise(out_b = median(out_b, na.rm=T)) %>% ungroup() %>% group_by(year) %>%   dplyr::summarise(out_b = mean(out_b, na.rm=T))
+out_ndvi_m %>% group_by(city, year) %>% dplyr::summarise(out_b = mean(out_b, na.rm=T)) %>% ungroup() %>% group_by(year) %>%   dplyr::summarise(out_b = mean(out_b, na.rm=T))
 
 #
+
+mean(out_ndvi_m %>% group_by(city, year) %>% dplyr::summarise(out_b = mean(out_b, na.rm=T)) %>% ungroup() %>% group_by(year) %>%   dplyr::summarise(out_b = mean(out_b, na.rm=T)) %>% pull(out_b))
 
 # greenest and least green cities
 
@@ -376,9 +464,9 @@ sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)
 grr <- merge(grr, sf_c, by.x="city", by.y="UC_NM_MN")
 grr$geometry <- NULL
 
-View(grr %>% group_by(city, GRGN_L1) %>% summarise(out_b=mean(out_b, na.rm=T)) %>% ungroup() %>%  group_by(GRGN_L1) %>% arrange(desc(out_b)) %>% slice(1))
+View(grr %>% group_by(city, GRGN_L1, P15) %>% summarise(out_b=mean(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>%  slice_max(P15, n=10)%>% arrange(desc(out_b)) %>% slice(1))
 
-View(grr %>% group_by(city, GRGN_L1) %>% summarise(out_b=mean(out_b, na.rm=T)) %>% ungroup() %>%  group_by(GRGN_L1) %>% arrange(out_b) %>% slice(1))
+View(grr %>% group_by(city, GRGN_L1, P15) %>% summarise(out_b=mean(out_b, na.rm=T)) %>% ungroup() %>% group_by(GRGN_L1) %>%  slice_max(P15, n=10)%>% arrange(out_b) %>% slice(1))
 
 
 #

@@ -1,3 +1,15 @@
+
+##############################################################################
+
+# This Rscript: 
+
+#   1) Make a big table with all the prediction results
+
+##############################################################################
+
+rm(list=ls(all=TRUE)) # Removes all previously created variables
+gc() 
+
 # calculate statistics
 
 library(caret)
@@ -13,7 +25,7 @@ library(ggrepel)
 library(sf)
 library(tidyverse)
 
-load("data/validation/after_points.Rdata")
+load("data/validation/after_points_030624.Rdata")
 
 statone <- function(predictions){
   
@@ -25,8 +37,15 @@ statone <- function(predictions){
   
 }
 
-ggg <- merge(gvs[[1]], gvs[[2]], by=c("x", "y"))
-ggg <- dplyr::select(ggg, out_b.x, out_b.y, city.x)
+sf <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
+sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)
+
+###
+
+out_ndvi_m$city <- sf_c$UC_NM_MN[as.numeric((sapply(strsplit(out_ndvi_m$id,"_"), `[`, 1)))]
+rm(gvs); gc()
+
+ggg <- dplyr::select(out_ndvi_m, city, year, out_b)
 
 cis_a_out <- list()
 cis_b_out <- list()
@@ -48,13 +67,13 @@ for (city in unique(ggg$city.x)){
     cis_a$city <- city
     
     cis_b <- as.data.frame(matrix(t(unlist(cis_b)), ncol=2, byrow = T))
-    cis_b$year = 2022
+    cis_b$year = 2023
     cis_b$city <- city
     
     cis_a_out[[city]] <- cis_a
     cis_b_out[[city]] <- cis_b
     
-    change_t <- t.test(ggg$out_b.x[ggg$city.x==city], ggg$out_b.y[ggg$city.x==city])$p.value
+    change_t <- t.test(ggg$out_b.x[ggg$city.x==city], ggg$out_b.y[ggg$city.x==city], paired=T)$p.value
     
     change_t_out[[city]] <- change_t
     
@@ -69,7 +88,7 @@ change_t_out <- t(bind_rows(change_t_out))
 colnames(out)[1:2] <- c("gvi_ci_lower_2016", "gvi_ci_upper_2016")
 out$year <- NULL
 
-colnames(out2)[1:2] <- c("gvi_ci_lower_2022", "gvi_ci_upper_2022")
+colnames(out2)[1:2] <- c("gvi_ci_lower_2023", "gvi_ci_upper_2023")
 out2$year <- NULL
 
 cis <- merge(out, out2, by="city")
@@ -82,9 +101,9 @@ colnames(change_t_out)[1] <- "p_value"
 cis <- merge(cis, change_t_out, by="city")
 
 cis$mean_2016 <- (cis$gvi_ci_lower_2016 + cis$gvi_ci_upper_2016)/2
-cis$mean_2022 <- (cis$gvi_ci_lower_2022 + cis$gvi_ci_upper_2022)/2
-cis$delta <- cis$mean_2022 - cis$mean_2016
-cis$delta_pct <- (cis$mean_2022 / cis$mean_2016) - 1
+cis$mean_2023 <- (cis$gvi_ci_lower_2023 + cis$gvi_ci_upper_2023)/2
+cis$delta <- cis$mean_2023 - cis$mean_2016
+cis$delta_pct <- (cis$mean_2023 / cis$mean_2016) - 1
 cis$sig <- ifelse(cis$p_value<0.01, 1, 0)
 
 # check change in stat. sign. cities
@@ -114,17 +133,17 @@ library(modelsummary)
 cis <- mutate_if(cis, is.numeric, round, 2)
 
 cis$mean_2016 <- paste0(cis$mean_2016, "\n (", cis$gvi_ci_lower_2016, "-", cis$gvi_ci_upper_2016 , ")")
-cis$mean_2022 <- paste0(cis$mean_2022, "\n (", cis$gvi_ci_lower_2022, "-", cis$gvi_ci_upper_2022 , ")")
+cis$mean_2023 <- paste0(cis$mean_2023, "\n (", cis$gvi_ci_lower_2023, "-", cis$gvi_ci_upper_2023 , ")")
 
-cis <- dplyr::select(cis, city, mean_2016, mean_2022, delta, delta_pct, p_value)
+cis <- dplyr::select(cis, city, mean_2016, mean_2023, delta, delta_pct, p_value)
 
 #
 
 cis <- arrange(cis, city)
 
-colnames(cis) <- c("City", "GVI, 2016 (median and 95% C.I.)", "GVI, 2022 (median and 95% C.I.)", "GVI, 2022-2016 med. diff.", "GVI, 2022-2016 %  med. diff.", "p-value of med. diff.")
+colnames(cis) <- c("City", "GVI, 2016 (median and 95% C.I.)", "GVI, 2023 (median and 95% C.I.)", "GVI, 2023-2016 med. diff.", "GVI, 2023-2016 %  med. diff.", "p-value of med. diff.")
 
-cis$`GVI, 2022-2016 %  med. diff.` <- cis$`GVI, 2022-2016 %  med. diff.` * 100
+cis$`GVI, 2023-2016 %  med. diff.` <- cis$`GVI, 2023-2016 %  med. diff.` * 100
 
 library(xtable)
 
