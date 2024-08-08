@@ -377,7 +377,7 @@ set.seed(2023)
 
 lower_pane_fig_4 <- ((p_r + ggsci::scale_colour_npg(name="")) + (pp + scale_colour_manual(values = sample(palette))) + plot_annotation(tag_levels = list("A", "B")) + plot_layout(widths = c(0.8, 1.35)))
 
-ggsave("Figure4_lower.png", lower_pane_fig_4, scale=1.5, height = 3.5, width = 6)
+ggsave("Figure4_lower.pdf", lower_pane_fig_4, scale=1.5, height = 3.5, width = 6)
 
 ########
 
@@ -413,15 +413,20 @@ aa <- ox_diagram_all_sel %>% dplyr::filter(city==unlist(strsplit(c, "_"))[1] & G
 
 ctry <- aa$GRGN_L1
 
-ggplot()+
+Johannesburg_Africa <- ggplot()+
   annotation_map_tile(zoom = 12)+
   theme_classic()+
   geom_sf(data=sf %>% filter(UC_NM_MN==c), colour="black", fill="transparent", )+
   geom_sf(data=aa, aes(fill=out_b))+
   scale_fill_distiller(name="GVI", palette = "Greens", direction = 1)+
-  ggtitle(paste0("C                                                      ", unlist(strsplit(c, "_"))[1]))
+  ggtitle(paste0("C                              ", unlist(strsplit(c, "_"))[1]))
   
-ggsave("Figure4_example.png", height = 5, width = 5, scale=1.2)
+ggsave("Figure4_example.pdf", Johannesburg_Africa, height = 5, width = 5, scale=1.2)
+
+
+library(patchwork)
+
+lower_pane_fig_4 +Johannesburg_Africa
 
 ###############
 
