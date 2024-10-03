@@ -335,7 +335,7 @@ gvs[[8]]$merger <-  as.character(paste0(gvs[[8]]$x, gvs[[8]]$y))
 
 library(h2o)
 h2o.init(min_mem_size = "4g")
-saved_model <- h2o.loadModel("C:/Users/Utente/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/h2ofilesgreen/xgbLog5hNNrmseHubFinalALL")
+saved_model <- h2o.loadModel("h2ofilesgreen/xgbLog5hNNrmseHubFinalALL")
 
 out_ndvi_m <- list()
 
@@ -360,7 +360,7 @@ out_ndvi_m <- bind_rows(out_ndvi_m)
 
 rm(list=setdiff(ls(), c("gvs","out_ndvi_m")))
 
-save.image("C:/Users/Utente/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points_030624.Rdata")
+save.image("data/validation/after_points_030624.Rdata")
 
 #######################
 
@@ -374,6 +374,6 @@ for (i in 1:8){
 
 gg <- bind_rows(gg)
 
-write_rds(gg, "C:/Users/Utente/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data/validation/after_points_predict_030624.Rds")
+write_rds(gg, "data/validation/after_points_predict_030624.Rds")
 
 

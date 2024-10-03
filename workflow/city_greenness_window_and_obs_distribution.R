@@ -100,9 +100,7 @@ library(raster)
 library(exactextractr)
 library(rnaturalearthdata)
 
-# setwd("data/validation/")
-
-setwd("C:/Users/Utente/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/data")
+setwd("./data")
 
 #### NB: consider stratified sampling by city to have balanced picture
 set.seed(2022)
