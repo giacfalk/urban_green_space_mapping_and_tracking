@@ -75,9 +75,34 @@ sf_d$city <- gsub("green_view", "", sf_d$city)
 sf_d$city <- gsub("greenview", "", sf_d$city)
 sf_d$city <- gsub("_", "", sf_d$city)
 
+sf_d$city[sf_d$city=="la"] <- "Los Angeles"
+sf_d$city[sf_d$city=="capetown"] <- "Cape Town"
+sf_d$city[sf_d$city=="london"] <- "London"
+sf_d$city[sf_d$city=="nyc"] <- "New York"
+sf_d$city[sf_d$city=="saopaolo"] <- "Sao Paolo"
+sf_d$city[sf_d$city=="montreal"] <- "Montreal"
+sf_d$city[sf_d$city=="tampa"] <- "Tampa"
+sf_d$city[sf_d$city=="ams"] <- "Amsterdam"
+sf_d$city[sf_d$city=="oslo"] <- "Oslo"
+sf_d$city[sf_d$city=="johanburg"] <- "Johannesburg"
+sf_d$city[sf_d$city=="telaviv"] <- "Tel Aviv"
+sf_d$city[sf_d$city=="toronto"] <- "Toronto"
+sf_d$city[sf_d$city=="cambridge"] <- "Cambridge"
+sf_d$city[sf_d$city=="sydney"] <- "Sydney"
+sf_d$city[sf_d$city=="quito"] <- "Quito"
+sf_d$city[sf_d$city=="miami"] <- "Miai"
+sf_d$city[sf_d$city=="sacramento"] <- "Sacramento"
+sf_d$city[sf_d$city=="dunban"] <- "Durban"
+sf_d$city[sf_d$city=="vancouver"] <- "Vancouver"
+sf_d$city[sf_d$city=="paris"] <- "Paris"
+sf_d$city[sf_d$city=="turin"] <- "Turin"
+sf_d$city[sf_d$city=="geneva"] <- "Geneva"
+sf_d$city[sf_d$city=="singapore"] <- "Singapore"
+sf_d$city[sf_d$city=="frankfurt"] <- "Frankfurt"
+
 ggplot(sf_d)+
   theme_classic()+
-  gg.layers::geom_boxplot2(aes(x=reorder(city, GreenView, FUN = median), y=GreenView), fill="orange")+
+  gg.layers::geom_boxplot2(aes(x=reorder(city, -GreenView, FUN = median), y=GreenView), fill="orange")+
   xlab("City")+
   ylab("GVI distribution")+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1))

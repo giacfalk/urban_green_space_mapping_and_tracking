@@ -28,7 +28,6 @@ library(dplyr)
 pacman::p_load(data.table,panelr,jtools, ggplot2,purrr,xtable,texreg,
                fixest,lmtest,caret,MLmetrics,sandwich)
 
-
 library(kgc)
 
 cl <- climatezones
@@ -67,43 +66,15 @@ write_rds(out_ndvi_m_sell1, "prediction_data.rds")
 
 #####
 
+load("data/validation/after_gee_multispectral_gee_170524.Rdata")
+
 load("data/validation/allRes.Rdata")
 
-sf_c <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") %>% dplyr::select(UC_NM_MN) %>% filter(UC_NM_MN %in% c("London", "Los Angeles", "Vancouver", "São Paulo", "Toronto", "Miami", "Tampa", "Singapore", "Sydney", "Johannesburg", "Tel Aviv", "Amsterdam", "Turin"))
+allDataa <- merge(allData, out_ndvi_m %>% dplyr::select(x, y, country, city), by=c("x", "y"))
 
-out_ndvi_m <- allData
-
-library(tidyverse)
-library(sf)
-library(nngeo)
-
-get_countries <-  function(long, lat)
-{ 
-  points <- cbind(long, lat)
-  countriesSP <- rworldmap::getMap(resolution = 'low')
-  pointsSP = sp::SpatialPoints(points, sp::CRS(sp::proj4string(countriesSP)))  
-  sp::over(pointsSP, countriesSP)$ADMIN
-}
-
-library(countrycode)
-
-out_ndvi_m$country <- as.character(get_countries(out_ndvi_m$x, out_ndvi_m$y))
-
-out_ndvi_m <- as.data.frame(out_ndvi_m)
-
-out_ndvi_m <- st_as_sf(out_ndvi_m, coords=c("x", "y"), crs=4326, remove=F)
-
-sf::sf_use_s2(F)
-
-out_ndvi_m <- st_join(out_ndvi_m  %>% st_transform(3395), sf_c %>% st_transform(3395), st_nn, k=1)
-
-sum(is.na(out_ndvi_m$UC_NM_MN))
-
-out_ndvi_m$geometry <- NULL
+out_ndvi_m <- as.data.frame(allDataa)
 
 out_ndvi_m$sample <- out_ndvi_m$dataset
-
-out_ndvi_m$city <- out_ndvi_m$UC_NM_MN
 
 out_ndvi_m_sel <- out_ndvi_m %>% dplyr::select(city, country, x, y, GreenView, starts_with("nd_"), population, gdp_capita, city, sample, preds, fullPreds)
 

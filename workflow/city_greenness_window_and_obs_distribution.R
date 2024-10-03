@@ -50,6 +50,33 @@ out_ndvi_m$city <- gsub("_", "", out_ndvi_m$city)
 
 ##
 
+out_ndvi_m$city[out_ndvi_m$city=="la"] <- "Los Angeles"
+out_ndvi_m$city[out_ndvi_m$city=="capetown"] <- "Cape Town"
+out_ndvi_m$city[out_ndvi_m$city=="london"] <- "London"
+out_ndvi_m$city[out_ndvi_m$city=="nyc"] <- "New York"
+out_ndvi_m$city[out_ndvi_m$city=="saopaolo"] <- "Sao Paolo"
+out_ndvi_m$city[out_ndvi_m$city=="montreal"] <- "Montreal"
+out_ndvi_m$city[out_ndvi_m$city=="tampa"] <- "Tampa"
+out_ndvi_m$city[out_ndvi_m$city=="ams"] <- "Amsterdam"
+out_ndvi_m$city[out_ndvi_m$city=="oslo"] <- "Oslo"
+out_ndvi_m$city[out_ndvi_m$city=="johanburg"] <- "Johannesburg"
+out_ndvi_m$city[out_ndvi_m$city=="telaviv"] <- "Tel Aviv"
+out_ndvi_m$city[out_ndvi_m$city=="toronto"] <- "Toronto"
+out_ndvi_m$city[out_ndvi_m$city=="cambridge"] <- "Cambridge"
+out_ndvi_m$city[out_ndvi_m$city=="sydney"] <- "Sydney"
+out_ndvi_m$city[out_ndvi_m$city=="quito"] <- "Quito"
+out_ndvi_m$city[out_ndvi_m$city=="miami"] <- "Miai"
+out_ndvi_m$city[out_ndvi_m$city=="sacramento"] <- "Sacramento"
+out_ndvi_m$city[out_ndvi_m$city=="dunban"] <- "Durban"
+out_ndvi_m$city[out_ndvi_m$city=="vancouver"] <- "Vancouver"
+out_ndvi_m$city[out_ndvi_m$city=="paris"] <- "Paris"
+out_ndvi_m$city[out_ndvi_m$city=="turin"] <- "Turin"
+out_ndvi_m$city[out_ndvi_m$city=="geneva"] <- "Geneva"
+out_ndvi_m$city[out_ndvi_m$city=="singapore"] <- "Singapore"
+out_ndvi_m$city[out_ndvi_m$city=="frankfurt"] <- "Frankfurt"
+
+##
+
 ggplot(out_ndvi_m)+
   theme_classic()+
   geom_histogram(aes(x=month, y = after_stat(count / sum(count))*100))+

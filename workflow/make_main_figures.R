@@ -52,6 +52,46 @@ sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)
 
 out_ndvi_m$city <- sf_c$UC_NM_MN[as.numeric((sapply(strsplit(out_ndvi_m$id,"_"), `[`, 1)))]
 
+###
+
+for(yrr in 2016:2023){
+
+library(stargazer)
+library(data.table)
+rm(gvs); gc()
+alldata<-data.table(out_ndvi_m %>% filter(year==yrr))
+
+varsNames<-c("B2_","B3_","B4_","B8_",
+             "mean_2m_air_temperature","surface_pressure","total_precipitation")
+lapply(varsNames,function(x){
+  bands<-grep(x,names(alldata),value = T)
+  alldata[,paste0("smean_",x):=rowMeans(.SD), .SDcols=bands]
+  alldata})
+
+mvars<-grep("smean_",names(alldata),value = T)
+
+mvars<-c("gdp_capita", "population","trees","bare",
+         "grass","water","shrub_and_scrub","flooded_vegetation","built",
+         "snow_and_ice","crops",
+         mvars)
+
+#Percentage for probs
+percVals<-c("trees","bare",
+            "grass","water","shrub_and_scrub","flooded_vegetation","built","snow_and_ice","crops")
+alldata[, (percVals) := lapply(.SD, function(x) x * 100), .SDcols = percVals]
+#Kelvin to celsius
+alldata$smean_mean_2m_air_temperature<-alldata$smean_mean_2m_air_temperature-273.15
+
+summary(alldata[,..mvars])
+namedVars<-c("GDP per capita", "Population density",                   
+             "Trees (\\%)","Bare (\\%)","Grass (\\%)" ,"Water (\\%)", "Shrub and scrub (\\%)",
+             "Flooded vegetation  (\\%)","Built (\\%)","Snow and ice (\\%)","Crops (\\%)", "B2","B3","B4","B8", "2m Air Temperature (C)",
+             "Surface Pressure (Pa)","Total Precipitation (m)") 
+stargazer(alldata[,..mvars],omit.summary.stat="n", summary.stat = c("mean","median",'sd',"min","max"),
+          covariate.labels=namedVars,digits=2, out = paste0("table_prediction_data_", yrr, ".tex"))
+
+}
+
 #----------------------------------------
 summ(baseModel<-lm(log(out_b)~year,data=out_ndvi_m),digits=4,robust=TRUE)
 baseModel<-coeftest(baseModel, vcov = vcovHC(baseModel), type = "HC0")
@@ -290,40 +330,140 @@ library(ggsci)
 ggsave("Figure3.png", height = 10, width = 7.5)
 ggsave("Figure3.pdf", height = 10, width = 7.5)
 
-  ######################
+#   ######################
+# # within city analysis
+# # cluster polygons
+# 
+# setwd("C:/Users/falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking")
+# fls <- list.files(pattern="clusters_")
+# fls <- fls[grepl("gpkg", fls)]
+# 
+# sf <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") %>% dplyr::select(UC_NM_MN, P15, GRGN_L1) %>% st_set_geometry(NULL) # Cities database
+# 
+# ox_diagram_o <- list()
+# 
+# for (i in fls){
+#   print(match(i, fls))
+#   
+#   ox_diagram <- read_sf(i)
+#   
+#   ox_diagram <- merge(ox_diagram, sf, by.x="city", by.y="UC_NM_MN")
+# 
+#     # pop extract
+#     
+#     pop = raster("data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
+#     ox_diagram$pop = exactextractr::exact_extract(pop, ox_diagram, "sum")
+#     
+#     ox_diagram <- ox_diagram %>% dplyr::arrange(out_b)
+#     ox_diagram <- ox_diagram %>% mutate(pop_c = cumsum(pop)/sum(pop))
+#     
+#     ox_diagram_o[[match(i, fls)]] <- ox_diagram
+#     
+#   }
+# 
+# 
+# for (i in 1:length(ox_diagram_o)){
+#   ox_diagram_o[[i]] <- st_transform(ox_diagram_o[[i]], 4326)
+# }
+# 
+# 
+# ox_diagram_all <- bind_rows(ox_diagram_o)
+# 
+# ox_diagram_all_sel <- ox_diagram_all[!duplicated(ox_diagram_all$city),] %>% dplyr::group_by(GRGN_L1) %>% dplyr::slice_max(P15, n = 5) %>% pull(city)
+# 
+# ox_diagram_all_sel <- filter(ox_diagram_all, city %in% ox_diagram_all_sel)
+# 
+# ox_diagram_all_sel$GRGN_L1[ox_diagram_all_sel$GRGN_L1=="Latin America and the Caribbean"] <- "Lat. Amer. & Caribb."
+# 
+# ox_diagram_all_sel <- arrange(ox_diagram_all_sel, GRGN_L1)
+# 
+# library(ggrepel)
+# 
+# pp <- ggplot()+
+#   theme_classic()+
+#   geom_line(data=ox_diagram_all_sel, aes(y=pop_c, x=out_b, group = city, colour=city), size=0.45)+
+#   xlab("GVI exposure")+
+#   ylab("Cumulative fraction of the population")+
+#   facet_wrap(vars(GRGN_L1))+ 
+#   geom_label_repel(data=ox_diagram_all_sel %>% st_set_geometry(NULL) %>%  group_by(GRGN_L1, city) %>% dplyr::summarise(out_b=median(out_b, na.rm=T), pop_c=median(pop_c, na.rm=T)), aes(x=out_b, y=pop_c, label=city, colour=city), size=2.5)+
+#   scale_y_continuous(labels=scales::label_percent())+
+#   theme(legend.position = "none", legend.direction = "horizontal", legend.key.size = unit(0.2, "cm"))+
+#   guides(colour=guide_legend(nrow=3,byrow=TRUE))+
+#   xlim(c(1, 30))
+# 
+# ##
+# 
+# remove_outliers <- function(x, na.rm = TRUE, ...) {
+#   qnt <- quantile(x, probs=c(.25, .75), na.rm = na.rm, ...)
+#   H <- 1.5 * IQR(x, na.rm = na.rm)
+#   y <- x
+#   y[x < (qnt[1] - H)] <- NA
+#   y[x > (qnt[2] + H)] <- NA
+#   y
+# }
+# 
+# ox_diagram_all_f <- ox_diagram_all %>%
+#   group_by(GRGN_L1) %>%
+#   mutate(pop = remove_outliers(pop))
+# 
+# ox_diagram_all_f <- na.omit(ox_diagram_all_f)
+# 
+# ox_diagram_regional <- ox_diagram_all_f %>% group_by(GRGN_L1) %>% dplyr::arrange(out_b) %>% mutate(pop_c = cumsum(pop)/sum(pop))
+# 
+# #ox_diagram_regional_lab <- ox_diagram_all %>% group_by(GRGN_L1) %>% dplyr::summarise(out_b=mean(out_b, na.rm=T), pop_c=mean(pop_c, na.rm=T))
+# 
+# ox_diagram_regional$GRGN_L1[ox_diagram_regional$GRGN_L1=="Latin America and the Caribbean"] <- "Lat. Amer. & Caribb."
+# 
+# p_r <- ggplot(data=ox_diagram_regional, aes(y=pop_c, x=out_b, group = GRGN_L1, colour=GRGN_L1))+
+#   theme_classic()+
+#   geom_line(size=0.75)+
+#   #geom_label_repel(data=ox_diagram_regional_lab, aes(y=pop_c, x=out_b, label=GRGN_L1))+
+#   ylab("Cumulative fraction of the population")+
+#   xlab("GVI exposure")+
+#   scale_y_continuous(labels=scales::label_percent())+
+#   theme(legend.position = "bottom", legend.direction = "horizontal", legend.key.size = unit(0.2, "cm"))+
+#   guides(colour=guide_legend(nrow=4,byrow=TRUE))+
+#   xlim(c(1, 30))
+# 
+# library(patchwork)
+# library(ggpubr)
+# 
+# palette <-   get_palette("Set1",  30)
+# 
+# set.seed(2023)
+# 
+# lower_pane_fig_4 <- ((pp + scale_colour_manual(values = sample(palette))) + (p_r + scale_colour_brewer(name="", palette = "Set3")) + plot_annotation(tag_levels = list("A", "B")) + plot_layout(ncol = 1))
+# 
+# ggsave("Figure4_lower.pdf", lower_pane_fig_4, scale=1.5, width = 4.5, height = 6)
+
+######################
 # within city analysis
 # cluster polygons
 
 setwd("C:/Users/falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking")
-fls <- list.files(pattern="clusters_")
-fls <- fls[grepl("gpkg", fls)]
-
-sf <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") %>% dplyr::select(UC_NM_MN, P15, GRGN_L1) %>% st_set_geometry(NULL) # Cities database
 
 ox_diagram_o <- list()
 
-for (i in fls){
-  print(match(i, fls))
+for (i in unique(out_ndvi_m$city)){
+  print(i)
   
-  ox_diagram <- read_sf(i)
+  ox_diagram <- out_ndvi_m %>% filter(city==i) 
+  ox_diagram <- ox_diagram %>% group_by(city, x, y) %>% dplyr::summarise(out_b = mean(out_b, na.rm=T))
+  ox_diagram <- ox_diagram %>% st_as_sf(coords=c("x", "y"), crs=4326) %>% st_transform(3395) %>% st_buffer(250) %>% st_transform(4326)
+  
+  
+  pop = raster("data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
+  ox_diagram$pop = exactextractr::exact_extract(pop, ox_diagram, "sum")
+  
+  ox_diagram <- ox_diagram %>% dplyr::arrange(out_b)
+  ox_diagram <- ox_diagram %>% mutate(pop_c = cumsum(pop)/sum(pop))
+  
+  ox_diagram$geometry <- NULL
   
   ox_diagram <- merge(ox_diagram, sf, by.x="city", by.y="UC_NM_MN")
-
-    # pop extract
-    
-    pop = raster("data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif")
-    ox_diagram$pop = exactextractr::exact_extract(pop, ox_diagram, "sum")
-    
-    ox_diagram <- ox_diagram %>% dplyr::arrange(out_b)
-    ox_diagram <- ox_diagram %>% mutate(pop_c = cumsum(pop)/sum(pop))
-    
-    ox_diagram_o[[match(i, fls)]] <- ox_diagram
-    
-  }
-
-
-for (i in 1:length(ox_diagram_o)){
-  ox_diagram_o[[i]] <- st_transform(ox_diagram_o[[i]], 4326)
+  
+  ox_diagram_o[[i]] <- ox_diagram
+  
 }
 
 
@@ -337,20 +477,38 @@ ox_diagram_all_sel$GRGN_L1[ox_diagram_all_sel$GRGN_L1=="Latin America and the Ca
 
 ox_diagram_all_sel <- arrange(ox_diagram_all_sel, GRGN_L1)
 
+library(ggrepel)
+
 pp <- ggplot()+
   theme_classic()+
   geom_line(data=ox_diagram_all_sel, aes(y=pop_c, x=out_b, group = city, colour=city), size=0.45)+
   xlab("GVI exposure")+
+  ylab("Cumulative fraction of the population")+
   facet_wrap(vars(GRGN_L1))+ 
-  geom_label_repel(data=ox_diagram_all_sel %>% st_set_geometry(NULL) %>%  group_by(GRGN_L1, city) %>% dplyr::summarise(out_b=median(out_b, na.rm=T), pop_c=median(pop_c, na.rm=T)), aes(x=out_b, y=pop_c, label=city, colour=city), size=2.5)+
-  ylab("")+
+  geom_label_repel(data=ox_diagram_all_sel %>%  group_by(GRGN_L1, city) %>% dplyr::summarise(out_b=median(out_b, na.rm=T), pop_c=median(pop_c, na.rm=T)), aes(x=out_b, y=pop_c, label=city, colour=city), size=2.5)+
   scale_y_continuous(labels=scales::label_percent())+
   theme(legend.position = "none", legend.direction = "horizontal", legend.key.size = unit(0.2, "cm"))+
   guides(colour=guide_legend(nrow=3,byrow=TRUE))+
-  xlim(c(0, 35))
+  xlim(c(1, 30))
 
+##
 
-ox_diagram_regional <- ox_diagram_all %>% group_by(GRGN_L1) %>% dplyr::arrange(out_b) %>% mutate(pop_c = cumsum(pop)/sum(pop))
+remove_outliers <- function(x, na.rm = TRUE, ...) {
+  qnt <- quantile(x, probs=c(.25, .75), na.rm = na.rm, ...)
+  H <- 1.5 * IQR(x, na.rm = na.rm)
+  y <- x
+  y[x < (qnt[1] - H)] <- NA
+  y[x > (qnt[2] + H)] <- NA
+  y
+}
+
+ox_diagram_all_f <- ox_diagram_all %>%
+  group_by(GRGN_L1) %>%
+  mutate(pop = remove_outliers(pop))
+
+ox_diagram_all_f <- ox_diagram_all_f %>% dplyr::select(GRGN_L1, out_b, pop) %>% na.omit(.)
+
+ox_diagram_regional <- ox_diagram_all_f %>% group_by(GRGN_L1) %>% dplyr::arrange(out_b) %>% mutate(pop_c = cumsum(pop)/sum(pop))
 
 #ox_diagram_regional_lab <- ox_diagram_all %>% group_by(GRGN_L1) %>% dplyr::summarise(out_b=mean(out_b, na.rm=T), pop_c=mean(pop_c, na.rm=T))
 
@@ -362,43 +520,42 @@ p_r <- ggplot(data=ox_diagram_regional, aes(y=pop_c, x=out_b, group = GRGN_L1, c
   #geom_label_repel(data=ox_diagram_regional_lab, aes(y=pop_c, x=out_b, label=GRGN_L1))+
   ylab("Cumulative fraction of the population")+
   xlab("GVI exposure")+
-  ylab("Cum. frac. of population")+
   scale_y_continuous(labels=scales::label_percent())+
   theme(legend.position = "bottom", legend.direction = "horizontal", legend.key.size = unit(0.2, "cm"))+
   guides(colour=guide_legend(nrow=4,byrow=TRUE))+
-  xlim(c(0, 35))
+  xlim(c(1, 30))
 
 library(patchwork)
 library(ggpubr)
 
-palette <-   get_palette("npg",  30)
+palette <-   get_palette("Set1",  30)
 
 set.seed(2023)
 
-lower_pane_fig_4 <- ((p_r + ggsci::scale_colour_npg(name="")) + (pp + scale_colour_manual(values = sample(palette))) + plot_annotation(tag_levels = list("A", "B")) + plot_layout(widths = c(0.8, 1.35)))
+lower_pane_fig_4 <- ((pp + scale_colour_manual(values = sample(palette))) + (p_r+ scale_colour_viridis_d(name="Region")) + plot_annotation(tag_levels = list("A", "B")) + plot_layout(ncol = 1))
 
-ggsave("Figure4_lower.pdf", lower_pane_fig_4, scale=1.5, height = 3.5, width = 6)
+ggsave("Figure4_lower.pdf", lower_pane_fig_4, scale=1.5, width = 4.5, height = 6)
 
 ########
 
 sf <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg")
 
-for (c in unique(paste0(ox_diagram_all_sel$city, "_", ox_diagram_all_sel$GRGN_L1))){
+for (c in unique(ox_diagram_all_sel$city)){
   
   print(c)
-  
-  aa <- ox_diagram_all_sel %>% dplyr::filter(city==unlist(strsplit(c, "_"))[1] & GRGN_L1==unlist(strsplit(c, "_"))[2])
-  
-  ctry <- aa$GRGN_L1
+  # 
+  # aa <- ox_diagram_all_sel %>% dplyr::filter(city==unlist(strsplit(c, "_"))[1] & GRGN_L1==unlist(strsplit(c, "_"))[2])
+  # 
+  # ctry <- aa$GRGN_L1
   
   library(ggspatial)
   
   ggplot()+
-    annotation_map_tile(zoom = 12)+
     theme_classic()+
-    geom_sf(data=sf %>% filter(UC_NM_MN==c), colour="black", fill="transparent", )+
-    geom_sf(data=aa, aes(fill=out_b))+
-    scale_fill_distiller(name="GVI", palette = "Greens", direction = 1)+
+    annotation_map_tile(zoom = 12, alpha = 0.5)+
+    geom_sf(data=out_ndvi_m %>% filter(city==c) %>% group_by(city, x, y) %>% dplyr::summarise(out_b=mean(out_b, na.rm=T)) %>%  st_as_sf(coords=c("x", "y"), crs=4326), aes(colour=out_b))+
+    geom_sf(data=sf %>% filter(UC_NM_MN==c)  %>% slice_max(P15), colour="black", fill="transparent", )+
+    scale_colour_distiller(name="GVI", palette = "Greens", direction = 1)+
     ggtitle(paste0(unlist(strsplit(c, "_"))[1]))
   
   ggsave(paste0(unlist(strsplit(c, "_"))[1], ".png"), height = 5, width = 5, scale=1.2)
@@ -407,19 +564,16 @@ for (c in unique(paste0(ox_diagram_all_sel$city, "_", ox_diagram_all_sel$GRGN_L1
 
 #
 
-c <- "Johannesburg_Africa"
-
-aa <- ox_diagram_all_sel %>% dplyr::filter(city==unlist(strsplit(c, "_"))[1] & GRGN_L1==unlist(strsplit(c, "_"))[2])
-
-ctry <- aa$GRGN_L1
-
+out_ndvi_m_summ <- out_ndvi_m %>% group_by(city, x, y) %>% dplyr::summarise(out_b = mean(out_b, na.rm=T))
+out_ndvi_m_summ <- filter(out_ndvi_m_summ, city=="Johannesburg") %>% st_as_sf(coords=c("x", "y"), crs=4326)
+                        
 Johannesburg_Africa <- ggplot()+
-  annotation_map_tile(zoom = 12)+
+  annotation_map_tile(zoom = 12, alpha = 0.5)+
   theme_classic()+
-  geom_sf(data=sf %>% filter(UC_NM_MN==c), colour="black", fill="transparent", )+
-  geom_sf(data=aa, aes(fill=out_b))+
-  scale_fill_distiller(name="GVI", palette = "Greens", direction = 1)+
-  ggtitle(paste0("C                              ", unlist(strsplit(c, "_"))[1]))
+  geom_sf(data=out_ndvi_m_summ , aes(colour=out_b), size=0.5)+
+  geom_sf(data=sf_c %>% filter(UC_NM_MN=="Johannesburg") , colour="black", fill="transparent")+
+  scale_colour_distiller(name="GVI", palette = "Greens", direction = 1)+
+  ggtitle(paste0("C                                ", unlist(strsplit(c, "_"))[1]))
   
 ggsave("Figure4_example.pdf", Johannesburg_Africa, height = 5, width = 5, scale=1.2)
 
@@ -427,6 +581,10 @@ ggsave("Figure4_example.pdf", Johannesburg_Africa, height = 5, width = 5, scale=
 library(patchwork)
 
 lower_pane_fig_4 +Johannesburg_Africa
+
+##
+
+source("cities_zoom_panels.R")
 
 ###############
 

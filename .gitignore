@@ -13,3 +13,5 @@ h2ofilesgreen/xgbLog5hNNrmseHubFinalALL
 clusters_1.gpkg
 *.gpkg
 *.png
+*.tex
+*.pdf

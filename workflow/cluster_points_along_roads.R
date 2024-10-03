@@ -6,18 +6,24 @@ library(pbapply)
 library(osmdata)
 library(mapview)
 
-setwd("C:/Users/falchetta/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking")
-
 load("data/validation/after_points_030624.Rdata")
+
+sf <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
+sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)
+
+out_ndvi_m$city <- sf_c$UC_NM_MN[as.numeric((sapply(strsplit(out_ndvi_m$id,"_"), `[`, 1)))]
+
+#----------------------------------------
+
 out_ndvi_m_s <- split(out_ndvi_m, out_ndvi_m$city)
 
 for (i in 1:length(out_ndvi_m_s)){
   tryCatch({
   print(i)
   
-sf_orig <- out_ndvi_m_s[[i]]
-  
-sf <- out_ndvi_m_s[[i]] %>% filter(year==2023) %>%  st_as_sf(coords=c("x", "y"), crs=4326) %>% st_transform(3395) %>% st_centroid() %>% st_cast("POINT") %>% st_as_sf()  %>% mutate(as_tibble(st_coordinates(.)))
+sf_orig <- out_ndvi_m_s[[i]] %>% group_by(x, y) %>% mutate(id= cur_group_id())
+
+sf <- out_ndvi_m_s[[i]] %>% group_by(x, y) %>% mutate(id= cur_group_id()) %>% ungroup() %>% group_by(city, x, y, id) %>%  dplyr::summarise(out_b = mean(out_b, na.rm=T)) %>% ungroup() %>%  st_as_sf(coords=c("x", "y"), crs=4326) %>% st_transform(3395) %>% st_centroid() %>% st_cast("POINT") %>% st_as_sf()  %>% mutate(as_tibble(st_coordinates(.)))
 
 km <- kmeans(sf |>
                st_drop_geometry() |>
@@ -36,7 +42,7 @@ sf_orig <- sf_orig %>% group_by(city, cluster) %>% dplyr::summarise(out_b_min=mi
 #   scale_colour_distiller(palette = "Set1")+
 #   theme(legend.position = "none")+
 #   labs(caption="Although colours are repeated due to palette limitations, points within each cluster are contiguous")
-#  
+# 
 # ggsave("clusters.png", height=5, width = 5, scale=1.2)
 
 sf <- arrange(sf, cluster)

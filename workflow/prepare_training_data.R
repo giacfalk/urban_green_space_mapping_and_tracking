@@ -191,7 +191,6 @@ out_ndvi_m <- merge(out_ndvi_m, gvs, "panoID")
 
 rm(gvs, gvs_w)
 
-saveRDS(out_ndvi_m, "after_gee_multispectral_gee_170524.rds")
 save.image("after_gee_multispectral_gee_170524.Rdata")
 
 #########################
