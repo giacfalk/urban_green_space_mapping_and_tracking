@@ -15,3 +15,8 @@ clusters_1.gpkg
 *.png
 *.tex
 *.pdf
+/old
+on_demand/on_demand_gvi_estimator.R
+on_demand/on_demand_gvi_estimator_v2.R
+on_demand/on_demand_gvi_estimator_v2_gcs.R
+on_demand/on_demand_gvi_estimator_v3.R
