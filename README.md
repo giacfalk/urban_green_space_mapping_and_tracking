@@ -1,8 +1,6 @@
 # Replication code and data for: Tracking green space along streets of world cities
 
-By Giacomo Falchetta and Ahmed T. Hammad 
-
-Manuscript under peer review, preprint: https://doi.org/10.21203/rs.3.rs-3916891/v1
+Falchetta, G., & Hammad, A. T. (2025). Tracking green space along streets of world cities. Environmental Research: Infrastructure and Sustainability. https://doi.org/10.1088/2634-4505/add9c4 
 
 To replicate the analysis:
 
