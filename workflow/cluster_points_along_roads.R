@@ -8,38 +8,8 @@ library(mapview)
 
 load("data/validation/after_points_030624.Rdata")
 
-cities <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg")
-cities <- cities %>% group_by(GRGN_L1) %>% slice_max(P15, n = 50)
-
-cities_provide <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg")
-
-dict <- basename(list.dirs("C:/Users/Utente/OneDrive - IIASA/IBGF_2024/implementation/climate/provide_urban_climate_data/climatechange/future_deltas", recursive = F))
-
-cities_provide <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg")
-
-library(stringdist)
-
-# Compute the string distance matrix
-dist_matrix <- stringdistmatrix(dict, cities_provide$UC_NM_MN, method = "lv")  # "lv" = Levenshtein distance
-
-# Find the closest match for each string in vec1
-closest_matches <- apply(dist_matrix, 1, function(row) cities_provide$UC_NM_MN[which.min(row)])
-
-# Combine results
-matches <- data.frame(original = dict, closest_match = closest_matches)
-
-matches$closest_match[3] <- "Alacant / Alicante"
-matches$closest_match[50] <- "Ho Chi Minh City"
-matches$closest_match[53] <- "Rawalpindi [Islamabad]"
-matches$closest_match[111] <- "Rotterdam [The Hague]"
-matches <- matches[-c(67,133),] 
-
-cities_provide <- filter(cities_provide, UC_NM_MN %in% matches$closest_match)
-cities_provide <- group_by(cities_provide, UC_NM_MN) %>% slice_max(P15, n = 1, with_ties = FALSE) %>% 
-  ungroup()
-
-cities <- bind_rows(cities, cities_provide)
-cities <- unique(cities)
+sf <- read_sf("data/validation/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg") # Cities database
+sf_c <- sf %>% group_by(GRGN_L2) %>% slice_max(P15, n = 10)
 
 out_ndvi_m$city <- sf_c$UC_NM_MN[as.numeric((sapply(strsplit(out_ndvi_m$id,"_"), `[`, 1)))]
 
@@ -100,7 +70,7 @@ sf$out_b_min = sf_orig$out_b_min
 sf$out_b_max = sf_orig$out_b_max
 sf$city = sf_orig$city
 
-write_sf(sf, paste0("clusters_new_", i, ".gpkg"))
+write_sf(sf, paste0("clusters_", i, ".gpkg"))
 
   }, error=function(e){})
 }

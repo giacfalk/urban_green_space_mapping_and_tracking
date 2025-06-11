@@ -63,15 +63,14 @@ gvsnames <- ifelse(grepl("2023", gvsnames), "2023", ifelse(grepl("2022", gvsname
 
 ###
 
-gvs2 <- data.frame(name=list.files(path="G:/Il mio Drive", pattern = "cities_sampled_new", full.names = T))
+gvs2 <- data.frame(name=list.files(path="G:/Il mio Drive", pattern = "cities_sampled", full.names = T))
 gvs2$id <- 1:nrow(gvs2)
 gvs2 <- gvs2[grepl("lc", gvs2$name),]
-
 gvs2 <- arrange(gvs2, desc(name))
 
 gvs2 <- pblapply(gvs2$name, fread)
 
-gvs2names <- data.frame(name=list.files(path="G:/Il mio Drive", pattern = "cities_sampled_new", full.names = T))
+gvs2names <- data.frame(name=list.files(path="G:/Il mio Drive", pattern = "cities_sampled", full.names = T))
 gvs2names <- gvs2names[grepl("lc", gvs2names$name),]
 
 gvs2names <- ifelse(grepl("2023", gvs2names), "2023", ifelse(grepl("2022", gvs2names), "2022", ifelse(grepl("2021", gvs2names), "2021", ifelse(grepl("2020", gvs2names), "2020", ifelse(grepl("2019", gvs2names), "2019", ifelse(grepl("2018", gvs2names), "2018", ifelse(grepl("2017", gvs2names), "2017", "2016")))))))
@@ -80,8 +79,7 @@ gvs2names <- ifelse(grepl("2023", gvs2names), "2023", ifelse(grepl("2022", gvs2n
 
 gvs3 <- data.frame(name=list.files(path="G:/Il mio Drive", pattern = "cities_sampled", full.names = T))
 gvs3$id <- 1:nrow(gvs3)
-gvs3 <- gvs3[grepl("pop", gvs3$name),]
-
+gvs3 <- gvs3[grepl("points_pop", gvs3$name),]
 gvs3 <- arrange(gvs3, desc(name))
 
 gvs3 <- pblapply(gvs3$name, fread)
@@ -90,14 +88,13 @@ gvs3 <- pblapply(gvs3$name, fread)
 
 gvs4 <- data.frame(name=list.files(path="G:/Il mio Drive", pattern = "cities_sampled", full.names = T))
 gvs4$id <- 1:nrow(gvs4)
-gvs4 <- gvs4[grepl("era", gvs4$name),]
-
+gvs4 <- gvs4[grepl("points_era", gvs4$name),]
 gvs4 <- arrange(gvs4, desc(name))
 
 gvs4 <- pblapply(gvs4$name, fread)
 
 gvs4names <- data.frame(name=list.files(path="G:/Il mio Drive", pattern = "cities_sampled", full.names = T))
-gvs4names <- gvs4names[grepl("era", gvs4names$name),]
+gvs4names <- gvs4names[grepl("points_era", gvs4names$name),]
 
 gvs4names <- ifelse(grepl("2023", gvs4names), "2023", ifelse(grepl("2022", gvs4names), "2022", ifelse(grepl("2021", gvs4names), "2021", ifelse(grepl("2020", gvs4names), "2020", ifelse(grepl("2019", gvs4names), "2019", ifelse(grepl("2018", gvs4names), "2018", ifelse(grepl("2017", gvs4names), "2017", "2016")))))))
 
@@ -151,8 +148,8 @@ gvs_b[[8]] <- bind_rows(gvs4[which(gvs4names=="2016")])
 gvs4 <- gvs_b
 rm(gvs_b)
 
-###
-
+  ###
+  
   gvs[[8]]$year <- 2016
   gvs[[7]]$year <- 2017
   gvs[[6]]$year <- 2018
@@ -165,9 +162,9 @@ rm(gvs_b)
   for (i in 1:8){
     gvs[[i]]$`system:index` <- sub("\\_.*", "", gvs[[i]]$`system:index`)
     gvs[[i]]$`system:index` <- as.numeric(gvs[[i]]$`system:index`) + 1
-    colnames(gvs[[i]])[21:22] <- c("x", "y")
+    colnames(gvs[[i]])[18:19] <- c("x", "y")
     gvs[[i]]$.geo <- NULL
-    gvs[[i]] <- pivot_wider(gvs[[i]], names_from = 1 , values_from = c(2:20, 24), names_glue = "{.value}_{`system:index`}", values_fn = mean)
+    gvs[[i]] <- pivot_wider(gvs[[i]], names_from = 1 , values_from = c(2:17, 21), names_glue = "{.value}_{`system:index`}", values_fn = mean)
     gvs[[i]]$merger <- as.character(paste0(gvs[[i]]$x, gvs[[i]]$y))
     
   }
@@ -186,7 +183,7 @@ rm(gvs_b)
     gvs2[[i]]$`system:index` <- as.numeric(gvs2[[i]]$`system:index`) + 1
     gvs2[[i]]$.geo <- NULL
     gvs2[[i]]$merger <- as.character(paste0(gvs2[[i]]$X, gvs2[[i]]$Y))
-    gvs2[[i]] <- dplyr::select(gvs2[[i]], 4:9, 11:14, 15, 16)
+    gvs2[[i]] <- dplyr::select(gvs2[[i]], 4:8, 11:14, 15, 16)
   }
   
   
@@ -228,6 +225,10 @@ rm(gvs_b)
     
   }
   
+  save.image("bk_while_processing_030624.Rdata")
+  
+  #
+  
   library(data.table)
   library(nngeo)
   library(countrycode)
@@ -235,7 +236,7 @@ rm(gvs_b)
 for (i in 1:8){
   
   gvs[[i]] <- arrange(gvs[[i]], merger, year)
-  gvs2[[i]] <- gvs2[[i]] %>% filter(merger %in% unique(gvs[[i]]$merger)) %>% arrange(merger, year) %>% dplyr::select(-merger, -year, -id) 
+  gvs2[[i]] <- gvs2[[i]] %>% filter(merger %in% unique(gvs[[i]]$merger)) %>% arrange(merger, year) %>% dplyr::select(-merger, -year) 
   gvs3[[i]] <- gvs3[[i]] %>% filter(merger %in% unique(gvs[[i]]$merger)) %>% arrange(merger, year) %>% dplyr::select(-merger, -year)
   gvs4[[i]] <- gvs4[[i]] %>% filter(merger %in% unique(gvs[[i]]$merger)) %>% arrange(merger, year) %>% dplyr::select(-merger, -year, -id)
   
@@ -310,16 +311,16 @@ for (i in 1:8){
 }
 
 for (i in 1:8){
-colnames( gvs[[i]])[320:324] <- c("medTrees","medBare","medWater","medGrass","medPop")
+colnames( gvs[[i]])[284:288] <- c("medTrees","medBare","medWater","medGrass","medPop")
 }
 
 library(gdata)
 
 gdata::keep(gvs, gvs2, gvs3, gvs4, gvs2names, gvs4names, gvsnames, get_countries, sure=T)
 
-save.image("after_points_step1_100425.Rdata")
+save.image("after_points_step1_030624.Rdata")
 
-load("after_points_step1_100425.Rdata")
+load("after_points_step1_030624.Rdata")
 
 gvs[[1]]$merger <-  as.character(paste0(gvs[[1]]$x, gvs[[1]]$y))
 gvs[[2]]$merger <-  as.character(paste0(gvs[[2]]$x, gvs[[2]]$y))
@@ -333,28 +334,24 @@ gvs[[8]]$merger <-  as.character(paste0(gvs[[8]]$x, gvs[[8]]$y))
 #########
 
 library(h2o)
-h2o.init(min_mem_size = "12g")
-
-setwd("C:/Users/Utente/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking")
-
-saved_model <- h2o.loadModel("C:/Users/Utente/OneDrive - IIASA/Current papers/greening/urban_green_space_mapping_and_tracking/h2ofilesgreen/xgbLog5hNNrmseHubFinalALL")
+h2o.init(min_mem_size = "4g")
+saved_model <- h2o.loadModel("h2ofilesgreen/xgbLog5hNNrmseHubFinalALL")
 
 out_ndvi_m <- list()
 
-for (i in 7:8){
-  print(i)
-  pr_2016 <- h2o::h2o.predict(saved_model,  as.h2o( gvs[[i]]))
-
+for (i in 1:8){
+  
+  pr_2016 <- h2o::h2o.predict(saved_model,  as.h2o( gvs[[i]][complete.cases( gvs[[i]]),]))
+  
   out_ndvi_m[[i]] <- exp(as.data.frame(pr_2016)$predict)
-
+  
+  gvs[[i]] <- na.omit(gvs[[i]])
+  
   gvs[[i]]$out_b <- out_ndvi_m[[i]]
-
+  
   gc()
-
+  
 }
-
-h2o.shutdown(prompt = FALSE)
-gc()
 
 out_ndvi_m <- gvs
 out_ndvi_m <- bind_rows(out_ndvi_m)
@@ -363,7 +360,7 @@ out_ndvi_m <- bind_rows(out_ndvi_m)
 
 rm(list=setdiff(ls(), c("gvs","out_ndvi_m")))
 
-save.image("data/validation/after_points_100425.Rdata")
+save.image("data/validation/after_points_030624.Rdata")
 
 #######################
 
@@ -371,11 +368,12 @@ gg <- list()
 
 for (i in 1:8){
 
-  gg[[i]] <- dplyr::select(gvs[[i]],  1, 2, 3, 315:316, 325)
-
+  gg[[i]] <- dplyr::select(gvs[[i]],  1, 2, 3, 289)
+  
 }
 
 gg <- bind_rows(gg)
 
-write_rds(gg, "data/validation/after_points_predict_100425.Rds")
+write_rds(gg, "data/validation/after_points_predict_030624.Rds")
+
 
